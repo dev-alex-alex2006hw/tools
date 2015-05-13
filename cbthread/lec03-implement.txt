@@ -1,0 +1,501 @@
+CBThread Lecture #3 - Implementation
+James S. Plank
+EECS Department
+University of Tennessee
+Knoxville, TN 37996
+
+This file is http://www.cs.utk.edu/~plank/plank/cbthread/Lecture_3/index.html.
+Implementation of the CBThread library
+In this lecture, we will be going over the implementation of the continuation-based threads library. The implementation is very simple, but make sure you understand how setjmp() and longjump() work.
+
+We will go over the pieces of the library in the following order:
+
+    The thread struct
+    Global variables and initialization
+    Cbthread_fork()
+    The subtle code -- block_myself()
+    Semaphores
+    Thread exiting and joining
+    Sleeping
+    The FakeSleep Code
+    Stack Reset
+    Tying it all together 
+
+The Thread Struct
+Each thread is represented by a very small struct with four fields:
+
+#define RUNNING 0
+#define READY 1
+#define BLOCKED 2
+#define SLEEPING 3
+#define ZOMBIE 4
+#define JOINING 5
+
+typedef struct thread {
+  void (*function)();
+  void *arg;
+  int state;
+  struct thread *joiner;
+} Thread;
+
+The first two fields are straightforward. The state represents all the potential states of the thread. If the thread is currently running, its state is RUNNING. Otherwise, it is one of the following:
+
+    READY: Ready to run, but not running. A thread that is just created by cbthread_fork() is in this state.
+    BLOCKED: Blocked on a semahpore due to a cbthread_gsem_P() operation.
+    SLEEPING: Sleeping due to a cbthread_sleep() or cbthread_fake_sleep() call.
+    ZOMBIE: The thread has exited, either by returning or by calling cbthread_exit(). If there is no thread that has called cbthread_join() on the thread, or that has called cbthread_joinall(), then the exited thread enters the zombie state, waiting for a joiner. It puts itself on a queue called Zombies as well, so that a new call to cbthread_joinall() can clean it up.
+    JOINING: This is a thread blocked because it is waiting for another thread to exit, or it has called cbthread_joinall() and there are still threads in the READY or SLEEPING state. 
+
+If a thread's state is READY, BLOCKED, SLEEPING or JOINING, then the fields function and arg contain the continuation that is to be invoked when the thread is to run.
+
+The joiner field contains a pointer to a thread that has called cbthread_join() on this thread. If there is no such thread, then the joiner field is NULL.
+
+Thread id's are merely pointers to the thread's Thread struct. There is a global variable cbthread_self that points to the currently executing thread. It should always be the case that cbthread_self->state is RUNNING.
+Global variables and initialization
+There are a few global variables maintained by the threads system. cbthread_self is one. Another is a Dllist called Readyq which is a list of threads that are ready to execute. All threads on the Readyq will have states of READY.
+
+There are a few other global variables that will be explained later. Here are all their type declarations:
+
+static Dllist Readyq = NULL;
+static Dllist Zombies = NULL;
+static JRB Sleepq = NULL;
+static JRB FakeSleepq = NULL;
+static double FakeTime = 0;
+
+static int first_time = 1;
+static jmp_buf thebuf;
+static int debug = 0;
+
+Thread *cbthread_self = NULL;
+static Thread *Joinall = NULL;
+
+Note that the only non-static global variable is cbthread_self because it is the only one that we let users use.
+
+Whenever a thread routine is invoked, it first tests to see if Readyq is NULL. If so, the threads system has not been initialized yet. At this point, cbthread_initialize() is called to initialize the state of the system. This initialization is straightforward: All queues are initialized to be empty, and a new Thread struct is created for the currently running thread. This is put into cbthread_self. Note that the function and arg fields of cbthread_self are not touched. This is because the thread is currently running -- no continuation is necessary.
+
+static void cbthread_initialize()
+{
+  if (Readyq != NULL) {
+    fprintf(stderr, "PT: Called cbthread_initialize twice\n");
+    exit(1);
+  }
+  Readyq = new_dllist();
+  Zombies = new_dllist();
+  Sleepq = make_jrb();
+  FakeSleepq = make_jrb();
+  cbthread_self = (Thread *) malloc(sizeof(Thread));
+  cbthread_self->state = RUNNING;
+  cbthread_self->joiner = NULL;
+}
+
+cbthread_fork()
+Cbt_fork() is a very simple procedure. It takes a continuation as arguments, creates a new thread struct and sets its state to READY. Next it puts the continuation into the struct, sets the joiner to NULL and puts the thread at the end of the Readyq. Then it returns. When it is done, as advertised, there is a new thread ready to execute on the ready queue.
+
+void *cbthread_fork(void (*function)(), void *arg)
+{
+  Thread *p;
+
+  if (Readyq == NULL) cbthread_initialize();
+
+  p = (Thread *) malloc(sizeof(Thread));
+  p->state = READY;
+  p->function = function;
+  p->arg = arg;
+  p->joiner = NULL;
+
+  dll_append(Readyq, new_jval_v((void *) p));
+  if (debug) fprintf(stderr, "0x%x: Calling cbthread_fork(0x%x, 0x%x): 0x%x\n",
+              cbthread_self, function, arg, p);
+  return (void *) p;
+}
+
+The subtle code -- block_myself()
+Next, we go over block_myself(). This is the core of the cbthread library. It is called by a thread whenever the thread has to relinquish the CPU. Its function is to get a thread off of the ready queue and execute it. It does a little more than that, which we'll explain later.
+
+It is assumed that the blocking thread has already set its state appropriately, and it has stored itself in the proper data structures. For example, if the thread has blocked on a semaphore, it is assumed that it has put itself into the semaphore's blocked threads queue and set its state to BLOCKING. Therefore block_myself does not have to do any bookkeeping on the currently blocked thread.
+
+A very simple strategy for block_myself() would be to take a thread off the ready queue, set its state to RUNNING, put it into cbthread_self and call the continuation. The problem with this is stack space. If we keep recursively calling continuations from block_myself(), our stack may grow without bounds, and one of the neat features of the cbthread library is its stacklessness.
+
+The solution to this problem is to use setjmp()/longjmp(). Specifically, the first time that block_myself() is called, it calls setjmp(thebuf). Whenever it is called again, it calls longjmp(thebuf). This pops off all stack frames currently above the first call to block_myself(), and is exactly what we need. Thus, whenever a thread blocks, it calls longjmp() to pop all its frames off the stack. This is how we get ``stackless'' threads. Note, we don't use any local variables until after the longjmp() call is made, so we don't have to worry about variables being reset on us.
+
+static void block_myself()
+{ 
+  Dllist d;
+  Thread *p;
+  void (*function)();
+  void *arg;
+  long t;
+    
+  if (Readyq == NULL) cbthread_initialize();
+      
+  if (debug) printf("0x%x: Block_myself %d\n", cbthread_self, first_time);
+  /* Always longjmp down to pop all thread frames off the stack */
+
+  if (first_time) {
+    first_time = 0;
+    setjmp(thebuf);
+  } else {
+    if (debug) printf("Doing longjmp\n");
+    longjmp(thebuf, 1);
+  }
+  ...
+
+Now, the code for taking a thread off the ready queue and running it is straightforward:
+
+  ...
+  if (!dll_empty(Readyq)) {
+    d = Readyq->flink;
+    p = (Thread *) d->val.v;
+    function = p->function;
+    arg = p->arg;
+    dll_delete_node(d);
+    cbthread_self = p;
+    p->state = RUNNING;
+    (*function)(arg);
+
+    /* If the function returns, the thread should exit */
+
+    cbthread_exit();
+  }
+  ...
+
+That last cbthread_exit() is for when a thread returns -- when that happens, it should be equivalent to calling cbthread_exit(), so that's what we do. Note that I don't show what happens when there are no threads left in the ready queue. I'll get to that later.
+Semaphores
+Semaphores are the main synchronization construct in the cbthread library. Their implementation is straightforward -- they have a value, and a dllist of blocked threads.
+
+typedef struct gsem {
+  int val;
+  Dllist queue;
+} *Gsem;
+
+Cbthread_make_gsem() is straightforward. It allocates a Gsem struct, initializes its value from its argument, creates an empty dllist for queue, and returns the Gsem to the user as a (void *):
+
+void *cbthread_make_gsem(int initval)
+{
+  Gsem g;
+
+  if (initval < 0) {
+    fprintf(stderr, "make_gsem: initval < 0 (%d)\n", initval);
+    exit(1);
+  }
+  g = (Gsem) malloc(sizeof(struct gsem));
+  g->val = initval;
+  g->queue = new_dllist();
+  return g;
+}
+
+cbthread_gsem_P() is a potentially blocking call, so it cannot return. Instead, it sets up the system to call its continuation when it is done being blocked. Here's exactly how it works. First the value of the semaphore is decremented. If that value is less than zero, the thread must be blocked. Therefore, the continuation in cbthread_self is set to the arguments of cbthread_gsem_P(), and cbthread_self is inserted into the queue. Then block_myself() is called, which will execute the first thread on the ready queue. This is the first example of a thread being blocked. It can only be unblocked by another thread calling cbthread_gsem_V().
+
+If the value of the semaphore is greater than or equal to zero, then the thread does not have to be blocked. However, cbthread_gsem_P() still cannot return. Instead, its continuation must be called. Rather than call it directly in cbthread_gsem_P() what happens is that cbthread_self is put at the beginning of the ready queue and block_myself() is then called. This means that the continuation is indeed called, but not until the stack is reset in block_myself(). Make sure you understand how this works.
+
+void cbthread_gsem_P(Gsem g, void (*function)(), void *arg)
+{
+  Thread *p;
+
+  if (Readyq == NULL) cbthread_initialize();
+
+  g->val--;
+
+  p = cbthread_self;
+  p->function = function;
+  p->arg = arg;
+
+  /* If blocking, put the continuation on the semaphore's queue, otherwise
+     put the continuation on the front of the ready_queue, and call
+     block_myself().  The reason for this is to pop off all the stack
+     frames and start anew */
+
+  if (g->val < 0) {
+    dll_append(g->queue, new_jval_v((void *) p));
+    p->state = BLOCKED;
+    if (debug) fprintf(stderr, "0x%x: blocking on semaphore 0x%x\n",
+                       cbthread_self, g);
+  } else {
+    dll_prepend(Readyq, new_jval_v((void *) p));
+    p->state = READY; /* This is not really necessary, since it's going
+                         on the head of the queue */
+    if (debug) fprintf(stderr, "0x%x: P called but no blocking on 0x%x\n",
+                       cbthread_self, g);
+  }
+  block_myself();
+}
+
+Cbthread_gsem_V() is more straightforward. It increments the semaphore's value, and if that is less than or equal to zero, then there is a thread on the queue that needs to be awakened. It does this by removing the first thread from the queue, and putting it onto the ready queue. It then returns to its caller.
+
+void cbthread_gsem_V(Gsem g) 
+{
+  Thread *p;
+
+  if (Readyq == NULL) cbthread_initialize();
+
+  g->val++;
+
+  /* If g->val <= 0, unblock a thread */
+
+  if (g->val <= 0) {
+    p = (Thread *) g->queue->flink->val.v;
+    dll_delete_node(g->queue->flink);
+    dll_append(Readyq, new_jval_v((void *) p));
+    p->state = READY;
+    if (debug) fprintf(stderr, "0x%x: V called on  0x%x -- waking up 0x%x\n",
+                       cbthread_self, g, p);
+  } else {
+    if (debug) fprintf(stderr, "0x%x: V called on  0x%x no one to wake\n",
+                       cbthread_self, g);
+  }
+}
+
+Thread exiting and joining
+There are two ways that a thread can perform a join operation. The first is with cbthread_join() which specifies to block until a particular thread is done. The second is with cbthread_joinall() which specifies to block until there are no more threads that can run. We'll start with cbthread_joinall(). The first thing it does is free all zombies. Then it sets the global variable Joinall to point to itself, sets its continuation, and blocks by calling block_myself():
+
+void cbthread_joinall(void (*function)(), void *arg)
+{
+  if (Readyq == NULL) {
+    cbthread_initialize();
+  }
+
+  while (!dll_empty(Zombies)) {
+    free(Zombies->flink->val.v);
+    dll_delete_node(Zombies->flink);
+  }
+
+  cbthread_self->function = function;
+  cbthread_self->arg = arg;
+  cbthread_self->state = JOINING;
+  Joinall = cbthread_self;
+  block_myself();
+}
+
+Cbthread_join() is a little trickier. There are two cases that it must worry about. The first is if the thread with which it wants to join (I'll call it the joinee) has not exited yet. In such a case, the current thread (the joiner) must block. Thus, it sets its continuation. It also needs to set itself up so that when the joinee exits, it can unblocks the joiner. This is done by setting the joiner field in the joinee's thread struct.
+
+The second case is if the joinee has already exited. In this case, the joinee's state will be set to ZOMBIE. If so, the joinee's thread struct is freed, its entry in the Zombies queue is deleted, and the joiner puts itself at the beginning of the ready queue (as in cbthread_gsem_P() above).
+
+In either case, cbthread_join() ends by calling block_myself().
+
+void cbthread_join(Thread *thread, void (*function)(), void *arg)
+{
+  if (Readyq == NULL) cbthread_initialize();
+
+  if (thread->joiner != NULL) {
+    fprintf(stderr, "Called cbthread_join on a thread twice\n");
+    exit(1);
+  }
+
+  /* If the thread is a zombie -- free it and go directly to the
+     continuation */
+  
+  cbthread_self->function = function;
+  cbthread_self->arg = arg;
+  
+  if (thread->state == ZOMBIE) {
+    dll_delete_node((Dllist) thread->arg);
+    free(thread);
+    cbthread_self->state = READY; /* Unnecessary -- see P() */
+    dll_prepend(Readyq, new_jval_v((void *) cbthread_self));
+  
+  /* Otherwise, block the thread as joining */
+  
+  } else {
+    thread->joiner = cbthread_self;
+    cbthread_self->state = JOINING;
+  }
+  
+  block_myself();
+}
+
+Finally, cbthread_exit() is called when a thread wants to exit. It is also called in block_myself() when a continuation returns because that means that the thread should exit. It performs one of three actions:
+
+    If it has a joiner defined, then it wakes up the joiner by putting it at the end of the ready queue. Then it frees itself.
+    If there is no joiner, but a Joinall thread exists, it simply frees itself.
+    Otherwise, it is a zombie. It sets its state to ZOMBIE, and also puts itself on the Zombies queue. It puts a pointer to its entry in the Zombies queue into its arg field, which makes it east to delete that entry if necessary. 
+
+In all three cases, the last action performed is to call block_myself().
+
+void cbthread_exit()
+{
+  Thread *p;
+
+  /* If the thread should exit -- if there is
+     a joiner, put it back on the ready queue and free yourself.
+     Otherwise, become a zombie */
+
+  if (debug) { fprintf(stderr, "0x%x: Exiting\n", cbthread_self); }
+
+  if (cbthread_self->joiner != NULL) {
+    p = cbthread_self->joiner;
+    p->state = READY;
+    dll_append(Readyq, new_jval_v((void *) p));
+    free(cbthread_self);
+
+  } else if (Joinall != NULL) {
+    free(cbthread_self);
+
+  } else {
+    cbthread_self->state = ZOMBIE;
+    dll_append(Zombies, new_jval_v((void *) cbthread_self));
+    cbthread_self->arg = (void *) (Zombies->blink);
+  }
+
+  block_myself();
+}
+
+Sleeping
+We can't just call sleep() to implement sleeping threads, because sleep() suspends the entire process, and thus other threads would not be able to execute. Instead, we maintain a red-black tree called the ``sleep queue''. This holds sleeping threads, and is indexed on the time_t value of when the thread should awaken. Thus, cbthread_sleep() simply initializes this value for the thread, puts it on the sleep queue, and calls block_myself(). We also defined cbthread_sleep() so that if it is called with a non-positive value, it works like cbthread_yield(). In such a case, the thread is simply put at the end of the ready queue:
+
+void cbthread_sleep(int sec, void (*function)(), void *arg)
+{
+  long t;
+  Thread *p;
+ 
+  if (Readyq == NULL) cbthread_initialize();
+
+  p = cbthread_self;
+  p->function = function;
+  p->arg = arg;
+
+  if (sec <= 0) {
+    dll_append(Readyq, new_jval_v((void *) p));
+    p->state = READY;
+  } else {
+    t = time(0)+sec;
+    jrb_insert_int(Sleepq, t, new_jval_v((void *)p));
+    p->state = SLEEPING;
+  }
+  block_myself();
+} 
+
+Now, sleeping threads are awakened in block_myself(). Before it processes the ready queue, it checks the current time against the sleep queue, and puts all threads that should be awakened into the ready queue. The code is below:
+
+/* This is in block_myself(): */
+  ...
+  if (!jrb_empty(Sleepq)) {
+    t = time(0);
+    while(!jrb_empty(Sleepq) && jrb_first(Sleepq)->key.i <= t) {
+      p = (Thread *) (Sleepq->flink->val.v);
+      p->state = READY;
+      dll_append(Readyq, new_jval_v((void *) p));
+      jrb_delete_node(jrb_first(Sleepq));
+    }
+  }
+  ...
+
+The FakeSleep Code
+The FakeSleep code is just like the sleeping code, except a tree of doubles is employed rather than of ints, and a virtual timer, held in a global variable called FakeTime is maintained. In block_myself(), if the Readyq is empty and the FakeSleepq is not, then that is when we move the virtual timer up to the time of the first entry on the FakeSleepq, and awaken all threads that are sleeping until that time:
+
+/* This is in block_myself(): */
+  ...
+  if (dll_empty(Readyq) && !jrb_empty(FakeSleepq)) {
+    FakeTime = FakeSleepq->flink->key.d;
+    while(!jrb_empty(FakeSleepq) && jrb_first(FakeSleepq)->key.d <= FakeTime) {
+      p = (Thread *) (FakeSleepq->flink->val.v);
+      p->state = READY;
+      dll_append(Readyq, new_jval_v((void *) p));
+      jrb_delete_node(jrb_first(FakeSleepq));
+    }
+  }
+  ...
+
+Stack Reset
+There is a cbthread call named cbthread_reset_stack(). It is called when you want to make sure that you don't call longjmp() when you block. This is useful for JOS. It's pretty simple -- setting a global variable:
+
+extern void cbthread_reset_stack()
+{
+  first_time = 1;
+}
+
+Tying it all together
+Finally, below is the full code for block_myself. In addition to the things described above, it does the following:
+
+    If there are no threads on the ready queue, but there are threads on the sleep queue, it calls sleep() for the requisite amount of time so that the first thread on the sleep queue can be awakened.
+
+    If there are no threads on the ready or sleep queues, it unblocks the Joinall thread if there is one. Otherwise, it exits the program, because there are no more threads that can execute. 
+
+static void block_myself()
+{
+  Dllist d;
+  Thread *p;
+  void (*function)();
+  void *arg;
+  long t;
+
+  if (Readyq == NULL) cbthread_initialize();
+
+  if (debug) printf("0x%x: Block_myself %d\n", cbthread_self, first_time);
+  /* Always longjmp down to pop all thread frames off the stack */
+
+  if (first_time) {
+    first_time = 0;
+    setjmp(thebuf);
+  } else {
+    if (debug) printf("Doing longjmp\n");
+    longjmp(thebuf, 1);
+  }
+
+  /* If the sleep queue is not empty, check to see if any sleepq
+     elements should come off of the queue */
+
+  if (!jrb_empty(Sleepq)) {
+    t = time(0);
+    while(!jrb_empty(Sleepq) && jrb_first(Sleepq)->key.i <= t) {
+      p = (Thread *) (Sleepq->flink->val.v);
+      p->state = READY;
+      dll_append(Readyq, new_jval_v((void *) p));
+      jrb_delete_node(jrb_first(Sleepq));
+    }
+  }
+
+  /* If the ready queue is empty, now check the fake sleep queue -- 
+     if it's not empty, move virtual time and take off the first elements */
+
+  if (dll_empty(Readyq) && !jrb_empty(FakeSleepq)) {
+    FakeTime = FakeSleepq->flink->key.d;
+    while(!jrb_empty(FakeSleepq) && jrb_first(FakeSleepq)->key.d <= FakeTime) {
+      p = (Thread *) (FakeSleepq->flink->val.v);
+      p->state = READY;
+      dll_append(Readyq, new_jval_v((void *) p));
+      jrb_delete_node(jrb_first(FakeSleepq));
+    }
+  }
+
+  /* Call the first thread on the ready queue */
+
+  if (!dll_empty(Readyq)) {
+    d = Readyq->flink;
+    p = (Thread *) d->val.v;
+    function = p->function;
+    arg = p->arg;
+    dll_delete_node(d);
+    cbthread_self = p;
+    p->state = RUNNING;
+    (*function)(arg);
+
+    /* If the function returns, the thread should exit */
+
+    cbthread_exit();
+
+  }
+ 
+  /* Otherwise, if there are sleepers, sleep until one of them is ready */
+  else if (!jrb_empty(Sleepq)) {
+    t = jrb_first(Sleepq)->key.i-t;
+    sleep(t);
+    block_myself();
+  }
+  
+  /* Otherwise, there are no more threads to run.  If there is 
+     a joinall continuation, call it.  Otherwise, exit */
+
+  if (Joinall != NULL) {
+    p = Joinall;
+    p->state = READY;
+    dll_append(Readyq, new_jval_v((void *) p));
+
+    Joinall = NULL;
+    block_myself();
+  }
+
+  /* fprintf(stderr, "No more threads to run\n"); */
+  exit(0);
+}
+
+

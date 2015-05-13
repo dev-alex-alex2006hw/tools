@@ -1,0 +1,334 @@
+
+CBThread Lecture #1 - Getting Started
+James S. Plank
+EECS Department
+University of Tennessee
+Knoxville, TN 37996
+
+This file is http://www.cs.utk.edu/~plank/plank/cbthread/Lecture_1/index.html.
+CBThread Library Overview
+Since the cbthread library is non-preemptive, threads only lose control of the CPU when they explicitly block. However, what does ``continuation-based'' mean? What it means is that whenever a thread makes a potentially blocking library call, that call will not return. Instead, all such calls require the thread to pass a pointer to a procedure and a (void *) pointer. This is called a ``continuation''. When the thread unblocks (or if the thread never was supposed to block), instead of returning to the calling procedure, the continuation is invoked -- the procedure is called with the (void *) pointer as its argument.
+
+Forking, exiting and joining
+The fork()/join() procedure calls of the cbthread library are as follows:
+
+    void *cbthread_fork(void (*function)(), void *arg): This creates a new thread and schedules it. This call does not block, and the newly created thread does not run until later, when the calling thread blocks. It returns a pointer to the new thread, which can be used to join with the thread.
+
+    void cbthread_exit() This causes a thread to terminate. You can also terminate a thread by having its calling function return. If you want the main program thread to exit, you must call cbthread_exit(), or the entire Unix process will exit.
+
+    void cbthread_join(void *thread_id, void (*function)(), void *arg): This blocks until the thread specified by thread_id exits, either by returning from its function or by calling cbthread_exit(). Since it is a blocking call, it does not return. When the specified thread exits, function(arg) is called. Note that unlike many other thread packages (like pthreads), cbthread_join() does not enable the exiting thread to communicate with the joiner. Moreover, since there is no stack to deallocate, there is no notion of having to call cbthread_join() to release resources -- threads do not have to be joined or "detached" when they exit.
+
+    void cbthread_joinall(void (*function)(), void *arg): Joinall is a useful procedure. It blocks until all other threads are blocked, at which point its continuation is invoked. Joinall is nice because there are times when you fork off a bunch of threads and want to wait for them all to finish. Joinall lets you do that with one call.
+
+    Joinall won't return if there are threads sleeping. It only returns when no other threads can run. 
+
+Simple Examples
+Our first example program is a simple "Hello World" program, in hw1.c:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "cbthread.h"
+
+void hw()
+{
+  printf("Hello World\n");
+}
+
+main()
+{
+  cbthread_fork(hw, NULL);
+  cbthread_exit();
+} 
+
+The main program forks one thread, running the procedure hw(), and then exits. When the main program thread exits, the newly created thread runs, which prints "Hello World." When hw() returns, the thread is done, and since there are no more threads to run, the program exits:
+
+UNIX> hw1
+Hello World
+UNIX> 
+
+A second example program, hw2.c, has the main thread join with the hw() thread, and prints some tracing statements.
+
+void hw()
+{
+  printf("Hello World\n");
+}
+
+void do_exit()
+{
+  printf("In do_exit -- returning\n");
+}
+
+main()
+{
+  void *t;
+
+  t = cbthread_fork(hw, NULL);
+  printf("Main thread -- between cbthread_fork and cbthread_join\n");
+  cbthread_join(t, do_exit, NULL);
+  printf("Main thread -- do I ever get here?\n");
+} 
+
+When we run this, we see both the non-preemptive nature of the library, and the fact that blocking calls do not return:
+
+UNIX> hw2
+Main thread -- between cbthread_fork and cbthread_join
+Hello World
+In do_exit -- returning
+UNIX> 
+
+The first line occurs in the main thread after calling cbthread_fork(). The new thread has been created, but since the library is non-preemptive, the main thread still has control of the CPU. When it calls cbthread_join(), it gives up control and the hw() thread runs to completion. When it completes, the cbthread_join() operation may continue, which means that do_exit() is executed. Note that when do_exit() returns, the main thread is done -- cbthread_join() never returns -- and the program is over. Since cbthread_join() never returns, that last printf() statement in the main thread does not get executed.
+
+The hw3.c program forks multiple threads and shows the cbthread_joinall() procedure. In this example, five threads are forked with arguments, and the main thread calls cbthread_joinall(). Each thread prints its id and "Hello World," and then exits. When all threads exit, the Joinall continuation gets control, printing a final statement before the program exits.
+
+void hw(int *v)
+{
+  printf("Thread %d: Hello World\n", *v);
+}
+
+void finish()
+{
+  printf("All threads are finished.\n");
+}
+
+main()
+{
+  void *t;
+  int i;
+  int args[5];
+
+  for (i = 0; i < 5; i++) {
+    args[i] = i;
+    t = cbthread_fork(hw, args+i);
+  }
+  printf("All threads forked.\n");
+  cbthread_joinall(finish, NULL);
+} 
+
+Here is the running program. Note again that the main thread does not give up control until it calls cbthread_joinall(). At that point, each thread executes in turn, and when all the threads return, the Joinall continuation is executed, printing that final statement:
+
+UNIX> hw3
+All threads forked.
+Thread 0: Hello World
+Thread 1: Hello World
+Thread 2: Hello World
+Thread 3: Hello World
+Thread 4: Hello World
+All threads are finished.
+UNIX> 
+
+Be Careful About Memory
+The program hw4.c shows a bug that can happen if you are not careful:
+
+void hw(int *v)
+{
+  printf("Thread %d: Hello World\n", *v);
+}
+
+main()
+{
+  int i;
+
+  for (i = 0; i < 5; i++) {
+    cbthread_fork(hw, &i);
+  }
+  cbthread_exit();
+} 
+
+The pointer to i is a pointer to the integer i in the main program. Even though the value in i changes for each cbthread_fork() call, when the threads execute, the value will be 5:
+
+UNIX> hw4
+Thread 5: Hello World
+Thread 5: Hello World
+Thread 5: Hello World
+Thread 5: Hello World
+Thread 5: Hello World
+UNIX> 
+
+Another bug is to pass a pointer from a thread's state and then block the thread. This is taboo, because threads reuse each other's stacks. An example is hw5.c, where hw_forker() passes a pointer to its local variable to the hw() threads. This is a problem because hw() reuses hw_forker()'s stack. Note how v is equal to & i below:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "cbthread.h"
+
+void hw(int *v)
+{
+  int i = 27;
+  printf("Thread %d: Hello World -- &i = 0x%x, v = 0x%x\n", *v, &i, v);
+}
+
+void hw_forker()
+{
+  int i;
+
+  printf("hw_forker: &i = 0x%x\n", &i);
+
+  for (i = 0; i < 5; i++) {
+    cbthread_fork(hw, &i);
+  }
+}
+
+main()
+{
+  cbthread_fork(hw_forker, NULL);
+  cbthread_exit();
+} 
+
+UNIX> hw5
+hw_forker: &i = 0xbfffe50c
+Thread 27: Hello World -- &i = 0xbfffe50c, v = 0xbfffe50c
+Thread 27: Hello World -- &i = 0xbfffe50c, v = 0xbfffe50c
+Thread 27: Hello World -- &i = 0xbfffe50c, v = 0xbfffe50c
+Thread 27: Hello World -- &i = 0xbfffe50c, v = 0xbfffe50c
+Thread 27: Hello World -- &i = 0xbfffe50c, v = 0xbfffe50c
+UNIX> 
+
+Sleeping and Fake_Sleeping
+Sometimes it is handy (especially when writing simulations) to be able to put a thread to sleep and let the other threads run. Since cbthread is non-preemptive, calling sleep() will put the entire process to sleep. For that reason, cbthread() implements its own version of sleep that blocks using a continuation, and only calls sleep() when there are no threads to run:
+
+    void cbthread_sleep(int sec, void (*function)(), void *arg). 
+
+A simple example of cbthread_sleep() is in sleeptest.c:
+
+void thread(void *arg)
+{
+  Tst *t;
+  int j;
+
+  t = (Tst *) arg;
+
+  if (t->counter == 5) cbthread_exit();
+  j = random()%5;
+  printf("%4d: Thread %d.  counter = %d.  Sleeping for %d seconds\n", 
+         time(0)-t0, t->tnum, t->counter, j);
+  t->counter++;
+  cbthread_sleep(j, thread, t);
+}
+
+main()
+{
+  int i;
+  Tst *t;
+
+  srandom(40);
+  t0 = time(0);
+
+  for (i = 0; i < 5; i++) {
+    t = (Tst *) malloc (sizeof(Tst));
+    t->tnum = i;
+    t->counter = 0;
+    cbthread_fork(thread, t);
+  }
+
+  cbthread_exit();
+}
+
+This program forks off five threads that each sleep for five random periods of time:
+
+UNIX> sleeptest
+   0: Thread 0.  counter = 0.  Sleeping for 1 seconds
+   0: Thread 1.  counter = 0.  Sleeping for 4 seconds
+   0: Thread 2.  counter = 0.  Sleeping for 2 seconds
+   0: Thread 3.  counter = 0.  Sleeping for 4 seconds
+   0: Thread 4.  counter = 0.  Sleeping for 0 seconds
+   0: Thread 4.  counter = 1.  Sleeping for 1 seconds
+   1: Thread 4.  counter = 2.  Sleeping for 1 seconds
+   1: Thread 0.  counter = 1.  Sleeping for 1 seconds
+   2: Thread 4.  counter = 3.  Sleeping for 3 seconds
+   2: Thread 0.  counter = 2.  Sleeping for 2 seconds
+   2: Thread 2.  counter = 1.  Sleeping for 0 seconds
+   2: Thread 2.  counter = 2.  Sleeping for 3 seconds
+   4: Thread 0.  counter = 3.  Sleeping for 0 seconds
+   4: Thread 3.  counter = 1.  Sleeping for 4 seconds
+   4: Thread 1.  counter = 1.  Sleeping for 0 seconds
+   4: Thread 0.  counter = 4.  Sleeping for 1 seconds
+   4: Thread 1.  counter = 2.  Sleeping for 0 seconds
+   4: Thread 1.  counter = 3.  Sleeping for 3 seconds
+   5: Thread 2.  counter = 3.  Sleeping for 3 seconds
+   5: Thread 4.  counter = 4.  Sleeping for 3 seconds
+   7: Thread 1.  counter = 4.  Sleeping for 0 seconds
+   8: Thread 2.  counter = 4.  Sleeping for 2 seconds
+   8: Thread 3.  counter = 2.  Sleeping for 2 seconds
+  10: Thread 3.  counter = 3.  Sleeping for 3 seconds
+  13: Thread 3.  counter = 4.  Sleeping for 1 seconds
+UNIX> 
+
+CBThread also implements "fake" sleeping, where time is virtualized. A virtual time is provided and when threads fake sleep for a period of time, they are blocked until the virtual timer reaches their wakeup time. Thus, threads block and unblock in the correct order, but there is no real sleeping. This is also nice for writing simulations. There are two "fake" routines:
+
+    double cbthread_get_fake_time(): this returns the virtual timer. Units really don't matter, since it's virtual, but we'll call them seconds. Note that it is a double.
+
+    void cbthread_fake_sleep(double seconds, void (*function)(), void *arg): Block until seconds units of virtual time have passed. 
+
+An example is fake_sleeptest.c, which modifies sleeptest.c to use virtual time:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "cbthread.h"
+
+double t0;
+
+typedef struct tst {
+  int counter;
+  int tnum;
+} Tst;
+
+void thread(void *arg)
+{
+  Tst *t;
+  double j;
+
+  t = (Tst *) arg;
+
+  if (t->counter == 5) cbthread_exit();
+  j = drand48();
+  printf("%7.4lf: Thread %d.  counter = %d.  Sleeping for %7.4lf seconds\n", 
+         cbthread_get_fake_time()-t0, t->tnum, t->counter, j);
+  t->counter++;
+  cbthread_fake_sleep(j, thread, t);
+}
+
+main()
+{
+  int i;
+  Tst *t;
+
+  srandom(40);
+  t0 = cbthread_get_fake_time();
+
+  for (i = 0; i < 5; i++) {
+    t = (Tst *) malloc (sizeof(Tst));
+    t->tnum = i;
+    t->counter = 0;
+    cbthread_fork(thread, t);
+  }
+
+}
+
+UNIX> fake_sleeptest
+ 0.0000: Thread 0.  counter = 0.  Sleeping for  0.3965 seconds
+ 0.0000: Thread 1.  counter = 0.  Sleeping for  0.8405 seconds
+ 0.0000: Thread 2.  counter = 0.  Sleeping for  0.3533 seconds
+ 0.0000: Thread 3.  counter = 0.  Sleeping for  0.4466 seconds
+ 0.0000: Thread 4.  counter = 0.  Sleeping for  0.3187 seconds
+ 0.3187: Thread 4.  counter = 1.  Sleeping for  0.8864 seconds
+ 0.3533: Thread 2.  counter = 1.  Sleeping for  0.0156 seconds
+ 0.3689: Thread 2.  counter = 2.  Sleeping for  0.5841 seconds
+ 0.3965: Thread 0.  counter = 1.  Sleeping for  0.1594 seconds
+ 0.4466: Thread 3.  counter = 1.  Sleeping for  0.3837 seconds
+ 0.5558: Thread 0.  counter = 2.  Sleeping for  0.6910 seconds
+ 0.8303: Thread 3.  counter = 2.  Sleeping for  0.0589 seconds
+ 0.8405: Thread 1.  counter = 1.  Sleeping for  0.8999 seconds
+ 0.8892: Thread 3.  counter = 3.  Sleeping for  0.1635 seconds
+ 0.9530: Thread 2.  counter = 3.  Sleeping for  0.1591 seconds
+ 1.0527: Thread 3.  counter = 4.  Sleeping for  0.5331 seconds
+ 1.1121: Thread 2.  counter = 4.  Sleeping for  0.6041 seconds
+ 1.2051: Thread 4.  counter = 2.  Sleeping for  0.5827 seconds
+ 1.2468: Thread 0.  counter = 3.  Sleeping for  0.2700 seconds
+ 1.5168: Thread 0.  counter = 4.  Sleeping for  0.3905 seconds
+ 1.7403: Thread 1.  counter = 2.  Sleeping for  0.2934 seconds
+ 1.7878: Thread 4.  counter = 3.  Sleeping for  0.7424 seconds
+ 2.0337: Thread 1.  counter = 3.  Sleeping for  0.2985 seconds
+ 2.3323: Thread 1.  counter = 4.  Sleeping for  0.0755 seconds
+ 2.5302: Thread 4.  counter = 4.  Sleeping for  0.4050 seconds
+UNIX> 
+
+Next lecture -- semaphores. 

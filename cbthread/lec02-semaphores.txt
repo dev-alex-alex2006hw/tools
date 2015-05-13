@@ -1,0 +1,310 @@
+BThread Lecture #2 - Semaphores
+James S. Plank
+EECS Department
+University of Tennessee
+Knoxville, TN 37996
+
+This file is http://www.cs.utk.edu/~plank/plank/cbthread/Lecture_2/index.html.
+General Semaphores
+The cbthread library only implements one synchronization primitive -- the general semaphore. It is defined to be a (void *) in cbthread.h:
+
+typedef void *cbthread_gsem;
+
+There are five procedure calls that act on semaphores:
+
+    cbthread_gsem cbthread_make_gsem(int initval): This creates a semaphore with a given value (that must be greater than or equal to zero).
+
+    void cbthread_kill_gsem(cbthread_gsem s): This destroys a semaphore. Since cbthread_make_gsem() does call malloc() its associated memory is freed with cbthread_kill_gsem().
+
+    int cbthread_gsem_getval(cbthread_gsem s): The returns a semaphore's value. I don't really think that this should be of much use, but it's there if you want it.
+
+    void cbthread_gsem_P(cbthread_gsem s, void (*function)(), void *arg): This performs the standard P() operation on the semaphore. Since it is a potentially blocking procedure, it never returns, but calls the continuation when it unblocks.
+
+    The procedure decrements the semaphore's value. If the new value is greater than or equal to zero, then it instantly calls the continuation. Otherwise, it blocks and waits for another thread to unblock it.
+
+    void cbthread_gsem_V(cbthread_gsem s): This performs the standard V() operation on the semaphore. It increments the semaphore's value, and if the new value is less than or equal to zero, it unblocks one of the threads that is waiting on the semaphore. 
+
+Note, typically we view semaphore operations as atomic, which is trivial here, since our threads are non-preemptive. The blocking and unblocking is done in FIFO order.
+Example #1 - A simple producer/consumer program
+The program in simple_sem.c is a very simple producer/consumer program which uses semaphores for the producers and consumers to communicate. There are two threads - a consumer and a producer. The threads share a semaphore, which is initialized to zero.
+
+The consumer prints out that it is running, and then calls cbthread_gsem_P() on the semaphore. When the cbthread_gsem_P() call unblocks, the consumer prints out the fact, then sleeps for a random amount of time before repeating itself.
+
+The producer prints out that it is running, and then calls cbthread_gsem_V() on the semaphore. It then sleeps for a random amount of time before repeating itself.
+
+Thus, on iteration i, the consumer cannot continue until the producer has gone through iteration i. Otherwise, it blocks. The program stops after 3 simulated seconds:
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "cbthread.h"
+
+typedef struct {
+  cbthread_gsem semaphore;
+  int counter;
+} Tinfo; 
+
+void consumer(Tinfo *t);
+
+void producer(Tinfo *t)
+{
+  t->counter++;
+  printf("%8.3lf Producer %d\n", cbthread_get_fake_time(), t->counter);
+  cbthread_gsem_V(t->semaphore);
+  cbthread_fake_sleep(drand48(), producer, t);
+}
+
+void consumer_unblocked(Tinfo *t)
+{
+  printf("%8.3lf Consumer %d finished\n", cbthread_get_fake_time(), t->counter);
+  cbthread_fake_sleep(drand48(), consumer, t);
+}
+
+void consumer(Tinfo *t)
+{
+  t->counter++;
+  printf("%8.3lf Consumer %d starting\n", cbthread_get_fake_time(), t->counter);
+  cbthread_gsem_P(t->semaphore, consumer_unblocked, t);
+}
+
+main()
+{
+  int i;
+  Tinfo *p, *c;
+  cbthread_gsem s;
+  
+  srand48(time(0));
+
+  s = cbthread_make_gsem(0);
+  p = (Tinfo *) malloc(sizeof(Tinfo));
+  p->semaphore = s;
+  p->counter = 0;
+  cbthread_fork(producer, p);
+
+  c = (Tinfo *) malloc(sizeof(Tinfo));
+  c->semaphore = s;
+  c->counter = 0;
+  cbthread_fork(consumer, c);
+  
+  cbthread_fake_sleep(3.00, exit, NULL);
+}
+
+Here it is running. Note how consumers 2 and 3 have to wait for producers 2 and 3 respectively before they can continue running (since the random number seed is set differently each time this program runs, your output may be different from this):
+
+UNIX> simple_sem
+   0.000 Producer 1
+   0.000 Consumer 1 starting
+   0.000 Consumer 1 finished
+   0.184 Consumer 2 starting
+   0.405 Producer 2
+   0.405 Consumer 2 finished
+   1.064 Consumer 3 starting
+   1.185 Producer 3
+   1.185 Consumer 3 finished
+   1.678 Producer 4
+   2.008 Consumer 4 starting
+   2.008 Consumer 4 finished
+   2.286 Consumer 5 starting
+   2.591 Producer 5
+   2.591 Consumer 5 finished
+   2.985 Consumer 6 starting
+UNIX> 
+
+Example #2 - Producers and Consumers with a Bounded Buffer
+The next program is in bounded_buffer.c. It implements a pretty standard bounded buffer synchronization. There are two producer threads and one consumer threads, all of which share a buffer, which is an array of ten doubles. The buffer is treated as a list, and each element holds a "job." For simplicity, there is no job -- the double is simply the time that a job would take.
+
+A consumer calls cbthread_gsem_P() on a semaphore called jobs to make sure that there is a job in the buffer. When it unblocks, we know there is a job in the buffer, so it removes it and sleeps for the specified time.
+
+A producer calls cbthread_gsem_P() on a semaphore called empty_slots to make sure that the buffer is not already full of jobs. When it unblocks, we know there is an empty slot in the buffer, so it generates a random job and puts it there. It then calls cbthread_gsem_V() on jobs to wake up a sleeping consumer. Likewise, each consumer, when it is finished, calls cbthread_gsem_V() on empty_slots to wake up a sleeping producer.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include "cbthread.h"
+
+typedef struct {
+  cbthread_gsem empty_slots;
+  cbthread_gsem jobs;
+  double buffer[10];
+  int head;
+  int nitems;
+} Shared;
+  
+typedef struct {
+  int id;
+  int counter;
+  Shared *s;
+} Tinfo; 
+
+void consumer(Tinfo *t);
+void producer(Tinfo *t);
+
+void producer_can_produce(Tinfo *t) 
+{
+  double jobtime;
+
+  jobtime = drand48();
+  printf("%8.3lf Producer %02d/%02d - putting job of length %.3lf on the buffer\n", 
+         cbthread_get_fake_time(), t->id, t->counter, jobtime);
+  t->s->buffer[(t->s->head + t->s->nitems)%10] = jobtime;
+  t->s->nitems++;
+  cbthread_gsem_V(t->s->jobs);
+  cbthread_fake_sleep(drand48(), producer, t);
+}
+
+void producer(Tinfo *t)
+{
+  t->counter++;
+  printf("%8.3lf Producer %02d/%02d - Getting buffer slot (Nitems=%02d)\n", 
+          cbthread_get_fake_time(), t->id, t->counter, t->s->nitems);
+  cbthread_gsem_P(t->s->empty_slots, producer_can_produce, t);
+}
+
+void consumer_can_consume(Tinfo *t)
+{
+  double jobtime;
+
+  jobtime = t->s->buffer[t->s->head];
+  printf("%8.3lf Consumer %02d/%02d gets a job of size %.3lf from the buffer.\n", 
+       cbthread_get_fake_time(), t->id, t->counter, jobtime);
+  t->s->head = (t->s->head + 1) % 10;
+  t->s->nitems--;
+  cbthread_gsem_V(t->s->empty_slots);
+  cbthread_fake_sleep(jobtime, consumer, t);
+}
+
+void consumer(Tinfo *t)
+{
+  t->counter++;
+  printf("%8.3lf Consumer %02d starting\n", cbthread_get_fake_time(), t->counter);
+  cbthread_gsem_P(t->s->jobs, consumer_can_consume, t);
+}
+
+main()
+{
+  int i;
+  Tinfo *p, *c;
+  Shared sh;
+  cbthread_gsem s;
+  
+  sh.empty_slots = cbthread_make_gsem(10);
+  sh.jobs = cbthread_make_gsem(0);
+  sh.head = 0;
+  sh.nitems = 0;
+
+  p = (Tinfo *) malloc(sizeof(Tinfo));
+  p->s = &sh;
+  p->counter = 0;
+  p->id = 0;
+  cbthread_fork(producer, p);
+
+  p = (Tinfo *) malloc(sizeof(Tinfo));
+  p->s = &sh;
+  p->counter = 0;
+  p->id = 1;
+  cbthread_fork(producer, p);
+
+  c = (Tinfo *) malloc(sizeof(Tinfo));
+  c->s = &sh;
+  c->counter = 0;
+  c->id = 0;
+  cbthread_fork(consumer, c);
+
+  cbthread_fake_sleep(8.00, exit, NULL);
+}
+
+It is true that the continuations are a bit of a pain, requiring the producers and consumers to be split up into two procedures each. However, one of the nice things about this library as opposed to pthreads is that we don't have to worry about protecting our data from preemption. That saves us on locking semaphores.
+
+Here is the program running:
+
+UNIX> bounded_buffer
+   0.000 Producer 00/01 - Getting buffer slot (Nitems=00)
+   0.000 Producer 00/01 - putting job of length 0.396 on the buffer
+   0.000 Producer 01/01 - Getting buffer slot (Nitems=01)
+   0.000 Producer 01/01 - putting job of length 0.353 on the buffer
+   0.000 Consumer 01 starting
+   0.000 Consumer 00/01 gets a job of size 0.396 from the buffer.
+   0.396 Consumer 02 starting
+   0.396 Consumer 00/02 gets a job of size 0.353 from the buffer.
+   0.447 Producer 01/02 - Getting buffer slot (Nitems=00)
+   0.447 Producer 01/02 - putting job of length 0.319 on the buffer
+   0.750 Consumer 03 starting
+   0.750 Consumer 00/03 gets a job of size 0.319 from the buffer.
+   0.840 Producer 00/02 - Getting buffer slot (Nitems=00)
+   0.840 Producer 00/02 - putting job of length 0.016 on the buffer
+   1.068 Consumer 04 starting
+   1.068 Consumer 00/04 gets a job of size 0.016 from the buffer.
+   1.084 Consumer 05 starting
+   1.333 Producer 01/03 - Getting buffer slot (Nitems=00)
+   1.333 Producer 01/03 - putting job of length 0.159 on the buffer
+   1.333 Consumer 00/05 gets a job of size 0.159 from the buffer.
+   1.425 Producer 00/03 - Getting buffer slot (Nitems=00)
+   1.425 Producer 00/03 - putting job of length 0.691 on the buffer
+   1.483 Producer 00/04 - Getting buffer slot (Nitems=01)
+   1.483 Producer 00/04 - putting job of length 0.900 on the buffer
+   1.492 Consumer 06 starting
+   1.492 Consumer 00/06 gets a job of size 0.691 from the buffer.
+   1.647 Producer 00/05 - Getting buffer slot (Nitems=01)
+   1.647 Producer 00/05 - putting job of length 0.159 on the buffer
+   1.717 Producer 01/04 - Getting buffer slot (Nitems=02)
+   1.717 Producer 01/04 - putting job of length 0.604 on the buffer
+   2.180 Producer 00/06 - Getting buffer slot (Nitems=03)
+   2.180 Producer 00/06 - putting job of length 0.270 on the buffer
+   2.183 Consumer 07 starting
+   2.183 Consumer 00/07 gets a job of size 0.900 from the buffer.
+   2.299 Producer 01/05 - Getting buffer slot (Nitems=03)
+   2.299 Producer 01/05 - putting job of length 0.293 on the buffer
+   2.571 Producer 00/07 - Getting buffer slot (Nitems=04)
+   2.571 Producer 00/07 - putting job of length 0.299 on the buffer
+   2.646 Producer 00/08 - Getting buffer slot (Nitems=05)
+   2.646 Producer 00/08 - putting job of length 0.405 on the buffer
+   3.042 Producer 01/06 - Getting buffer slot (Nitems=06)
+   3.042 Producer 01/06 - putting job of length 0.942 on the buffer
+   3.083 Consumer 08 starting
+   3.083 Consumer 00/08 gets a job of size 0.159 from the buffer.
+   3.242 Consumer 09 starting
+   3.242 Consumer 00/09 gets a job of size 0.604 from the buffer.
+   3.503 Producer 00/09 - Getting buffer slot (Nitems=05)
+   3.503 Producer 00/09 - putting job of length 0.846 on the buffer
+   3.506 Producer 00/10 - Getting buffer slot (Nitems=06)
+   3.506 Producer 00/10 - putting job of length 0.462 on the buffer
+   3.705 Producer 01/07 - Getting buffer slot (Nitems=07)
+   3.705 Producer 01/07 - putting job of length 0.788 on the buffer
+   3.846 Consumer 10 starting
+   3.846 Consumer 00/10 gets a job of size 0.270 from the buffer.
+   3.970 Producer 01/08 - Getting buffer slot (Nitems=07)
+   3.970 Producer 01/08 - putting job of length 0.983 on the buffer
+   4.039 Producer 00/11 - Getting buffer slot (Nitems=08)
+   4.039 Producer 00/11 - putting job of length 0.601 on the buffer
+   4.116 Consumer 11 starting
+   4.116 Consumer 00/11 gets a job of size 0.293 from the buffer.
+   4.277 Producer 01/09 - Getting buffer slot (Nitems=08)
+   4.277 Producer 01/09 - putting job of length 0.212 on the buffer
+   4.410 Consumer 12 starting
+   4.410 Consumer 00/12 gets a job of size 0.299 from the buffer.
+   4.648 Producer 00/12 - Getting buffer slot (Nitems=08)
+   4.648 Producer 00/12 - putting job of length 0.305 on the buffer
+   4.708 Consumer 13 starting
+   4.708 Consumer 00/13 gets a job of size 0.405 from the buffer.
+   4.799 Producer 00/13 - Getting buffer slot (Nitems=08)
+   4.799 Producer 00/13 - putting job of length 0.338 on the buffer
+   5.113 Consumer 14 starting
+   5.113 Consumer 00/14 gets a job of size 0.942 from the buffer.
+   5.163 Producer 01/10 - Getting buffer slot (Nitems=08)
+   5.163 Producer 01/10 - putting job of length 0.644 on the buffer
+   5.187 Producer 00/14 - Getting buffer slot (Nitems=09)
+   5.187 Producer 00/14 - putting job of length 0.604 on the buffer
+   5.718 Producer 00/15 - Getting buffer slot (Nitems=10)
+   5.916 Producer 01/11 - Getting buffer slot (Nitems=10)
+   6.055 Consumer 15 starting
+   6.055 Consumer 00/15 gets a job of size 0.846 from the buffer.
+   6.055 Producer 00/15 - putting job of length 0.459 on the buffer
+   6.708 Producer 00/16 - Getting buffer slot (Nitems=10)
+   6.902 Consumer 16 starting
+   6.902 Consumer 00/16 gets a job of size 0.462 from the buffer.
+   6.902 Producer 01/11 - putting job of length 0.327 on the buffer
+   7.364 Consumer 17 starting
+   7.364 Consumer 00/17 gets a job of size 0.788 from the buffer.
+   7.364 Producer 00/16 - putting job of length 0.368 on the buffer
+   7.848 Producer 01/12 - Getting buffer slot (Nitems=10)
+UNIX> 
+
+Note how at time 5.718, the producer blocks, because the buffer is full. From that time until the end of the program, producers always block, and only unblock when a consumer frees up a slot. 
