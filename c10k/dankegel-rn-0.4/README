@@ -1,0 +1,13 @@
+rn socket readiness notification library.
+Latest version available at http://kegel.com/rn
+
+rn provides a more or less convenient wrapper around
+two very efficient notification mechanisms, sigio and epoll.
+See http://www.kegel.com/c10k.html for a description of these
+two mechanisms.  Basically, they are standard Linux replacements
+for poll that are much more efficient.
+The right one to use is almost always epoll; sigio is only a fallback,
+as it's less efficient.  rn picks the best one automatically for you
+at runtime.
+
+See rn.html for documentation, and rn_test.c for an example of how to use it.

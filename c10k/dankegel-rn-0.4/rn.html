@@ -1,0 +1,162 @@
+<html>
+<head>
+<title>Using rn</title>
+</head>
+<body>
+<h1><a name=top>rn</a></h1>
+rn provides a more or less convenient wrapper around
+two very efficient notification mechanisms, sigio and epoll.
+See <a href="http://www.kegel.com/c10k.html">www.kegel.com/c10k.html</a>
+for a description of these
+two mechanisms.  Basically, they are standard Linux replacements
+for poll that are much more efficient.
+The right one to use is almost always epoll; sigio is only a fallback,
+as it's less efficient.
+<p>
+The odd thing about rn is that you have to tell it the maximum
+number of file descriptors you expect to have to use,
+and (if you want to work with sigio) you have to tell it
+which realtime signal to use to deliver its notifications.
+<p>
+The epoll library must be installed before you can build rn.
+
+<h2><a name=use>Using rn</a></h2>
+The api is fairly simple; see <a href="rn_test.c">rn_test.c</a> for an example.
+<p>
+Here are the steps to add rn support to a program currently using poll():
+<ul>
+<li>In source code that currently uses poll(), add the line
+<pre>
+#include &lt;rn.h&gt;
+</pre>
+to get access to rn.
+
+<li> Link your program with -lrn.  You *might* also have to link with -lepoll,
+but not if you're using glibc-2.3.2 or later.
+
+<li> In main(), or somewhere near startup, create an object of type rn_t, and call rn_init() and rn_setSignum() on it.  e.g.
+<pre>
+rn_t rns;
+if (rn_init(&rns, 128)) {
+	printf("FAIL: rn_init failed \n");
+	exit(1);
+}
+if (rn_setSignum(&rns, SIGRTMIN)) {
+	printf("FAIL: rn_setSignum failed \n");
+	exit(1);
+}
+</pre>
+The second argument to rn_init() should be the highest file descriptor
+you expect to ever see in your program, or roughly the number
+of sockets you expect to have open at any one time.
+<p>
+The second argument to rn_setSignum() is the realtime signal rn should use
+internally.  Usually SIGRTMIN is fine.
+
+<li> Whenever you create a socket fd, add it to the rn as follows:
+<pre>
+err = rn_prepare_fd_for_add(fd, getpid());
+if (err) {
+	printf("FAIL: rn_prepare_fd_for_add failed, errno %d\n", err);
+	exit(1);
+}
+
+err = rn_add(&rns, fd, my_callback, NULL);
+if (err) {
+	printf("FAIL: rn_add failed, errno %d\n", err);
+	exit(1);
+}
+</pre>
+The third argument to rn_add() is your readiness event handler function; it is called
+whenever that socket becomes ready for I/O.
+The fourth argument to rn_add() is for your use; it is a context pointer that will be
+passed back when your readiness event handler is called.  You can use it to hold
+a pointer to the object associated with that socket.  (If there is demand,
+I may add a C++ wrapper for rn so C++ programmers could simply give an object
+pointer here, and inherit from class rnClient, then override its virtual
+readiness event handler method.)
+
+<li> Whenever you close a socket fd, remove it from the rn as follows:
+<pre>
+rn_del(&fns, fd);
+</pre>
+
+<li> Replace the call to poll() in your program with a call to rn_waitAndDispatchEvents():
+<pre>rn_waitAndDispatchEvents(&rns, timeout_milliseconds);</pre>
+The second argument to rn_waitAndDispatchEvents is the timeout in
+milliseconds; the call will sleep until some sockets are
+ready for I/O, but no longer than timeout_milliseconds.
+
+<li> Replace the code after poll() that looks at the ready fd array 
+with an event handler callback function.  Basically, rn_waitAndDispatchEvents will
+look at the ready fd array for you, and call the event handler function
+you specified in rn_add() whenever the socket you specified in rn_add() becomes
+ready for something.
+
+<li> (The hardest part of all:) never, ever return from your event handler function
+without either "using up" the readiness status of the socket, or storing it for
+later action.  In the simplest case of reading from a socket, you must continue
+calling read() on the socket until read() returns a partial buffer or returns
+-1 and sets errno to EWOULDBLOCK.  (Or until you close the socket.)
+If you fail to read all the bytes waiting to be read, your event handler
+might never be called again, and your state machine will jam.
+</ul>
+
+<p>
+<h2><a name=test>Unit test</a></h2>
+The rn library comes with a test program which doubles as a demo.
+The test program is unfortunately not standalone -- it relies on
+the 'chargen' tcp server, which you may have to enable by 
+editing /etc/inetd.conf, then restarting inetd.
+<p>
+Here's what a successful run looks like:
+<pre>
+# ./rn_test
+fn: revents 4
+rn_POLLOUT
+fn: revents 5
+fn: read returns 1024, errno 11
+... (repeats 62 times)
+fn: read returns 1024, errno 11
+fn: read returns 977, errno 11
+Read 66513 bytes
+PASS
+</pre>
+
+If you're debugging a program that uses rn, you may wish to rebuild
+rn with dprints enabled.  To do this, uncomment the lines
+<pre>
+/* #define dprint_ENABLED */
+/* #define dprint_TRACE_ENABLED */
+</pre>
+in rn_dprint.h, and rebuild and reinstall rn.
+With dprint enabled, a successful run looks like this:
+<pre>
+# ./rn_test
+-469985671:47:rn_sys_epoll.c:rn_sys_epoll_init  init()
+-469985652:150:rn_sys_epoll.c:rn_sys_epoll_add  add(4, 0x10000954, (nil)) this->m_fds_used 1
+-469985651:198:rn_sys_epoll.c:rn_sys_epoll_waitAndDispatchEvents        Calling epoll...
+-469985651:200:rn_sys_epoll.c:rn_sys_epoll_waitAndDispatchEvents        epoll returns 1 fds. errno: 11-469985651:213:rn_sys_epoll.c:rn_sys_epoll_waitAndDispatchEvents        fd 4, revents 4
+fn: revents 4
+rn_POLLOUT
+-469985651:198:rn_sys_epoll.c:rn_sys_epoll_waitAndDispatchEvents        Calling epoll...
+-469985638:200:rn_sys_epoll.c:rn_sys_epoll_waitAndDispatchEvents        epoll returns 1 fds. errno: 11-469985638:213:rn_sys_epoll.c:rn_sys_epoll_waitAndDispatchEvents        fd 4, revents 5
+fn: revents 5
+fn: read returns 1024, errno 11
+... (62 lines like the one above)
+fn: read returns 1024, errno 11
+fn: read returns 118, errno 11
+Read 65654 bytes
+-469985628:160:rn_sys_epoll.c:rn_sys_epoll_del  del(fd 4)
+PASS
+</pre>
+<hr>
+
+<i>Last change: 10 Nov 2003<br>
+Portions Copyright 2002 Dan Kegel<br>
+Portions Copyright 2003 Ixia Communications<br>
+Licensed under the LGPL<br>
+[<a href="http://www.kegel.com/rn/">Return to kegel.com/rn</a>]</i>
+</body>
+</html>
+

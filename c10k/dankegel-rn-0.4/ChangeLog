@@ -1,0 +1,30 @@
+0.4  11 Nov 2003
+	rn_sys_epoll.h uses poll.h rather than linux/poll.h, to compile properly with glibc-cvs's headers
+	.h files do #include <> rather than #include ""
+	Install rn_config.h so rn_*.h can use #ifdef HAVE_*
+	Don't compile with -pedantic, since we use a C99 feature (varadic macros) in rn_dprint.h
+
+0.3  10 Nov 2003
+	Added configure script
+	Doesn't assume sigio is always present or working (prelude to supporting kqueue)
+	Renamed epoll.* to dev_epoll.*
+	rn_prepare_fd_for_add now returns error code instead of exiting process (!)
+	sys_epoll.c always sets the EPOLLET flag; should let us work with both
+	old and new sys_epoll
+
+	The generic rn_* macros have been replaced by function pointers; here's why:
+	Turns out it's bad to make apps chose a notification method at compile time, 
+	since there is in general no way to know which one will work until runtime.
+	rn now uses elf magic to search for a working notification method
+	at startup, and sets the function pointers to refer to that method.
+	Apps which want to choose their own notification method can
+	either call the new rn_config_*() setup functions themselves,
+	or ignore the function pointers and call the familiar
+	rn_{sigio,dev_epoll,sys_epoll}_*() routines directly.
+
+0.2  15 Oct 2003
+	Typo fixes in rn_sys_epoll.c
+	Added rn.html, moved most of README into it
+
+0.1  13 Oct 2003
+	Initial release

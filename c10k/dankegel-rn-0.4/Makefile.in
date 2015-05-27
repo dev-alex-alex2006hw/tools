@@ -1,0 +1,68 @@
+# Overridable parameters
+TARGET_CFLAGS=
+BUILD=release
+PREFIX=/usr
+TARGET_OBJ_DIR=.
+TARGET_LIB_DIR=$(PREFIX)/lib
+TARGET_INC_DIR=$(PREFIX)/include
+CC=cc
+AR=ar
+RANLIB=ranlib
+MKOBJDIR=
+#MKOBJDIR=mkdir -p $(TARGET_OBJ_DIR)
+MKINCDIR=
+#MKINCDIR=mkdir -p $(TARGET_INC_DIR)
+
+# No editing should be needed from here on down
+
+SRCS = rn_eclock.c rn_dprint.c rn_sigio.c rn_dev_epoll.c rn_sys_epoll.c rn.c
+TESTS = $(TARGET_OBJ_DIR)/rn_test
+
+OBJECTS := $(SRCS:%.c=$(TARGET_OBJ_DIR)/%.o)
+HEADERS := rn_dprint.h rn_eclock.h rn_dev_epoll.h rn_event.h rn.h rn_sigio.h rn_sys_epoll.h rn_config.h
+INSTALL_HEADERS := $(HEADERS:%.h=$(TARGET_INC_DIR)/%.h)
+#INSTALL_LIBS := $(TARGET_LIB_DIR)/librn.a $(TARGET_LIB_DIR)/librn.so
+INSTALL_LIBS := $(TARGET_LIB_DIR)/librn.so
+
+# Can't use -pedantic, as gcc-3.3 complains that varadic macros as used in rn_dprint.h are a C99 feature
+CFLAGS=$(TARGET_CFLAGS) @DEFS@ -O2 -W -Wall -Werror -I. -fpic
+LIBS=@LIBS@
+
+ifeq ($(BUILD),debug)
+ CFLAGS += -g -Ddprint_ENABLED
+endif
+
+all: $(TARGET_OBJ_DIR)/librn.so $(TESTS)
+
+install: $(INSTALL_LIBS) $(INSTALL_HEADERS)
+
+# Install rules
+$(TARGET_INC_DIR)/%.h: %.h
+	$(MKINCDIR)
+	install -m 644 $< $@
+
+$(TARGET_LIB_DIR)/%: $(TARGET_OBJ_DIR)/%
+	install -m 644 $< $@
+
+# Build rules
+#$(TARGET_OBJ_DIR)/librn.a: $(OBJECTS)
+#	$(AR) -cr $@ $^
+
+$(TARGET_OBJ_DIR)/librn.so: $(OBJECTS)
+	$(CC) -shared $^ -o $@
+
+$(TARGET_OBJ_DIR)/%.o: %.c
+	$(MKOBJDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(TARGET_OBJ_DIR)/rn_test:  rn_test.c $(TARGET_OBJ_DIR)/librn.so
+	$(CC) $(CFLAGS) $< $(TARGET_OBJ_DIR)/librn.so $(LIBS) -o $@
+
+clean:
+	-rm -f $(TARGET_OBJ_DIR)/*.o $(TARGET_OBJ_DIR)/*.so $(TARGET_OBJ_DIR)/*.a $(OBJECTS) $(TESTS)
+
+uninstall:
+	-rm -f $(INSTALL_LIBS) $(INSTALL_HEADERS) $(TARGET_OBJ_DIR)/rn_test
+
+distclean: clean
+	-rm -rf Makefile config.status config.log autom4te.cache rn_config.h
