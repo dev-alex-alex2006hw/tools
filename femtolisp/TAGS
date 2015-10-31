@@ -1,0 +1,1462 @@
+
+builtins.c,1281
+size_t llength(20,324
+static value_t fl_nconc(30,451
+static value_t fl_assq(56,1052
+static value_t fl_memq(72,1381
+static value_t fl_length(84,1654
+static value_t fl_f_raise(113,2438
+static value_t fl_exit(119,2557
+static value_t fl_symbol(127,2709
+static value_t fl_keywordp(135,2926
+static value_t fl_top_level_value(142,3122
+static value_t fl_set_top_level_value(151,3403
+static void global_env_list(160,3667
+value_t fl_global_env(173,3987
+static value_t fl_constantp(186,4252
+static value_t fl_integer_valuedp(199,4581
+static value_t fl_integerp(228,5391
+static value_t fl_fixnum(237,5634
+static value_t fl_truncate(250,5985
+static value_t fl_vector_alloc(278,6812
+static value_t fl_time_now(300,7378
+static double todouble(307,7529
+static value_t fl_time_string(319,7831
+static value_t fl_time_fromstring(328,8074
+static value_t fl_path_cwd(339,8397
+#define stat 355,8806
+static value_t fl_path_exists(357,8832
+static value_t fl_os_getenv(367,9081
+static value_t fl_os_setenv(378,9398
+static value_t fl_rand(400,9921
+static value_t fl_rand32(411,10177
+static value_t fl_rand64(421,10368
+static value_t fl_randd(427,10539
+static value_t fl_randf(432,10665
+static builtinspec_t builtin_info[builtin_info442,10890
+void builtins_init(482,11989
+
+cvalues.c,4903
+#define NWORDS(4,38
+#define NWORDS(6,77
+static int ALIGN2,9,118
+static int ALIGN2, ALIGN4,9,118
+static int ALIGN2, ALIGN4, ALIGN8,9,118
+static int ALIGN2, ALIGN4, ALIGN8, ALIGNPTR;9,118
+value_t int8sym,11,164
+value_t int8sym, uint8sym,11,164
+value_t int8sym, uint8sym, int16sym,11,164
+value_t int8sym, uint8sym, int16sym, uint16sym,11,164
+value_t int8sym, uint8sym, int16sym, uint16sym, int32sym,11,164
+value_t int8sym, uint8sym, int16sym, uint16sym, int32sym, uint32sym;11,164
+value_t int64sym,12,233
+value_t int64sym, uint64sym;12,233
+value_t longsym,13,262
+value_t longsym, ulongsym,13,262
+value_t longsym, ulongsym, bytesym,13,262
+value_t longsym, ulongsym, bytesym, wcharsym;13,262
+value_t floatsym,14,308
+value_t floatsym, doublesym;14,308
+value_t gftypesym,15,337
+value_t gftypesym, stringtypesym,15,337
+value_t gftypesym, stringtypesym, wcstringtypesym;15,337
+value_t emptystringsym;16,388
+value_t structsym,18,413
+value_t structsym, arraysym,18,413
+value_t structsym, arraysym, enumsym,18,413
+value_t structsym, arraysym, enumsym, cfunctionsym,18,413
+value_t structsym, arraysym, enumsym, cfunctionsym, voidsym,18,413
+value_t structsym, arraysym, enumsym, cfunctionsym, voidsym, pointersym;18,413
+value_t unionsym;19,486
+static htable_t TypeTable;21,505
+static htable_t reverse_dlsym_lookup_table;22,532
+static fltype_t *int8type,int8type23,576
+static fltype_t *int8type, *uint8type;uint8type23,576
+static fltype_t *int16type,int16type24,615
+static fltype_t *int16type, *uint16type;uint16type24,615
+static fltype_t *int32type,int32type25,656
+static fltype_t *int32type, *uint32type;uint32type25,656
+static fltype_t *int64type,int64type26,697
+static fltype_t *int64type, *uint64type;uint64type26,697
+static fltype_t *longtype,longtype27,738
+static fltype_t *longtype, *ulongtype;ulongtype27,738
+static fltype_t *floattype,floattype28,777
+static fltype_t *floattype, *doubletype;doubletype28,777
+       fltype_t *bytetype,bytetype29,818
+       fltype_t *bytetype, *wchartype;wchartype29,818
+       fltype_t *stringtype,stringtype30,857
+       fltype_t *stringtype, *wcstringtype;wcstringtype30,857
+       fltype_t *builtintype;builtintype31,901
+#define ALLOC_LIMIT_TRIGGER 41,1253
+static size_t malloc_pressure 43,1291
+static cvalue_t **Finalizers Finalizers45,1327
+static size_t nfinalizers=46,1364
+static size_t maxfinalizers=47,1393
+void add_finalizer(49,1425
+static void sweep_finalizers(63,1874
+#define SWAP_sf(68,2002
+static size_t cv_nwords(103,2940
+static void autorelease(114,3168
+void cv_autorelease(120,3300
+static value_t cprim(125,3360
+value_t cvalue(134,3610
+value_t cvalue_from_data(173,4606
+value_t cvalue_from_ref(189,5197
+value_t cvalue_string(206,5610
+value_t cvalue_static_cstring(211,5683
+value_t string_from_cstrn(216,5805
+value_t string_from_cstr(223,5941
+int fl_isstring(228,6030
+void cv_pin(234,6171
+#define num_init(246,6404
+num_init(266,7660
+#define num_ctor_init(277,7993
+#define num_ctor_ctor(288,8662
+#define num_ctor(296,9109
+size_t toulong(328,9937
+static int cvalue_enum_init(340,10205
+value_t cvalue_enum(374,11085
+static int isarray(384,11380
+static size_t predict_arraylen(389,11486
+static int cvalue_array_init(402,11762
+value_t cvalue_array(464,13527
+size_t cvalue_arraylen(487,14036
+static size_t cvalue_struct_offs(493,14157
+static size_t cvalue_union_size(519,14757
+size_t ctype_sizeof(536,15203
+void to_sized_ptr(596,16875
+value_t cvalue_sizeof(621,17544
+value_t cvalue_typeof(633,17858
+static value_t cvalue_relocate(656,18514
+value_t cvalue_copy(676,19007
+value_t fl_copy(703,19721
+value_t fl_podp(715,20119
+static void cvalue_init(723,20340
+static numerictype_t sym_to_numtype(733,20535
+value_t cvalue_new(778,21727
+value_t cvalue_compare(809,22638
+static void check_addr_args(828,23134
+static value_t cvalue_array_aref(840,23489
+static value_t cvalue_array_aset(873,24534
+value_t fl_builtin(883,24851
+value_t cbuiltin(894,25185
+static builtinspec_t cvalues_builtin_info[cvalues_builtin_info915,25880
+#define cv_intern(932,26305
+#define ctor_cv_intern(933,26352
+#define mk_primtype(936,26446
+#define mk_primtype_(939,26549
+static void cvalues_init(942,26660
+#define RETURN_NUM_AS(1013,28665
+value_t return_from_uint64(1015,28737
+value_t return_from_int64(1032,29157
+static value_t fl_add_any(1046,29514
+static value_t fl_neg(1115,31631
+static value_t fl_mul_any(1154,32959
+static int num_to_ptr(1216,34827
+int numeric_compare(1243,35512
+static void DivideByZeroError(1270,36249
+static void DivideByZeroError(1271,36313
+static value_t fl_div2(1276,36402
+static value_t fl_idiv2(1301,37001
+static value_t fl_bitwise_op(1345,38367
+static value_t fl_logand(1410,40988
+static value_t fl_logior(1426,41307
+static value_t fl_logxor(1442,41625
+static value_t fl_lognot(1458,41967
+static value_t fl_ash(1486,42843
+
+equal.c,776
+#define BOUNDED_COMPARE_BOUND 1,0
+#define BOUNDED_HASH_BOUND 2,35
+#define cmptag(5,90
+static value_t eq_class(7,142
+static void eq_union(17,380
+static value_t bounded_vector_compare(30,832
+static value_t bounded_compare(49,1500
+static value_t cyc_vector_compare(127,4161
+static value_t cyc_compare(175,5425
+static htable_t equal_eq_hashtable;244,7609
+void comparehash_init(245,7645
+static value_t compare_(251,7769
+value_t fl_compare(261,8054
+value_t fl_equal(266,8130
+#define MIX(282,8546
+#define doublehash(283,8604
+#define MIX(285,8645
+#define doublehash(286,8714
+static uptrint_t bounded_hash(290,8831
+        double d;294,8921
+        int64_t i64;295,8939
+int equal_lispvalue(367,10956
+uptrint_t hash_lispvalue(374,11096
+value_t fl_hash(381,11227
+
+equalhash.c,34
+#define _equal_lispvalue_(14,203
+
+equalhash.h,25
+#define EQUALHASH_H2,20
+
+flisp.c,6886
+static char *builtin_names[builtin_names50,1333
+#define ANYARGS 71,1897
+static short builtin_arg_counts[builtin_arg_counts73,1921
+static uint32_t N_STACK;81,2159
+static value_t *Stack;Stack82,2184
+static uint32_t SP 83,2207
+static uint32_t curr_frame 84,2231
+#define PUSH(85,2263
+#define POP(86,2299
+#define POPN(87,2329
+#define N_GC_HANDLES 89,2356
+static value_t *GCHandleStack[GCHandleStack90,2382
+static uint32_t N_GCHND 91,2427
+value_t FL_NIL,93,2457
+value_t FL_NIL, FL_T,93,2457
+value_t FL_NIL, FL_T, FL_F,93,2457
+value_t FL_NIL, FL_T, FL_F, FL_EOF,93,2457
+value_t FL_NIL, FL_T, FL_F, FL_EOF, QUOTE;93,2457
+value_t IOError,94,2500
+value_t IOError, ParseError,94,2500
+value_t IOError, ParseError, TypeError,94,2500
+value_t IOError, ParseError, TypeError, ArgError,94,2500
+value_t IOError, ParseError, TypeError, ArgError, UnboundError,94,2500
+value_t IOError, ParseError, TypeError, ArgError, UnboundError, MemoryError;94,2500
+value_t DivideError,95,2577
+value_t DivideError, BoundsError,95,2577
+value_t DivideError, BoundsError, Error,95,2577
+value_t DivideError, BoundsError, Error, KeyError,95,2577
+value_t DivideError, BoundsError, Error, KeyError, EnumerationError;95,2577
+value_t printwidthsym,96,2646
+value_t printwidthsym, printreadablysym,96,2646
+value_t printwidthsym, printreadablysym, printprettysym,96,2646
+value_t printwidthsym, printreadablysym, printprettysym, printlengthsym;96,2646
+value_t printlevelsym,97,2719
+value_t printlevelsym, builtins_table_sym;97,2719
+static value_t NIL,99,2763
+static value_t NIL, LAMBDA,99,2763
+static value_t NIL, LAMBDA, IF,99,2763
+static value_t NIL, LAMBDA, IF, TRYCATCH;99,2763
+static value_t BACKQUOTE,100,2805
+static value_t BACKQUOTE, COMMA,100,2805
+static value_t BACKQUOTE, COMMA, COMMAAT,100,2805
+static value_t BACKQUOTE, COMMA, COMMAAT, COMMADOT,100,2805
+static value_t BACKQUOTE, COMMA, COMMAAT, COMMADOT, FUNCTION;100,2805
+static value_t pairsym,102,2868
+static value_t pairsym, symbolsym,102,2868
+static value_t pairsym, symbolsym, fixnumsym,102,2868
+static value_t pairsym, symbolsym, fixnumsym, vectorsym,102,2868
+static value_t pairsym, symbolsym, fixnumsym, vectorsym, builtinsym,102,2868
+static value_t pairsym, symbolsym, fixnumsym, vectorsym, builtinsym, vu8sym;102,2868
+static value_t definesym,103,2945
+static value_t definesym, defmacrosym,103,2945
+static value_t definesym, defmacrosym, forsym,103,2945
+static value_t definesym, defmacrosym, forsym, setqsym;103,2945
+static value_t tsym,104,3001
+static value_t tsym, Tsym,104,3001
+static value_t tsym, Tsym, fsym,104,3001
+static value_t tsym, Tsym, fsym, Fsym,104,3001
+static value_t tsym, Tsym, fsym, Fsym, booleansym,104,3001
+static value_t tsym, Tsym, fsym, Fsym, booleansym, nullsym,104,3001
+static value_t tsym, Tsym, fsym, Fsym, booleansym, nullsym, evalsym,104,3001
+static value_t tsym, Tsym, fsym, Fsym, booleansym, nullsym, evalsym, fnsym;104,3001
+static value_t nulsym,106,3103
+static value_t nulsym, alarmsym,106,3103
+static value_t nulsym, alarmsym, backspacesym,106,3103
+static value_t nulsym, alarmsym, backspacesym, tabsym,106,3103
+static value_t nulsym, alarmsym, backspacesym, tabsym, linefeedsym,106,3103
+static value_t nulsym, alarmsym, backspacesym, tabsym, linefeedsym, newlinesym;106,3103
+static value_t vtabsym,107,3183
+static value_t vtabsym, pagesym,107,3183
+static value_t vtabsym, pagesym, returnsym,107,3183
+static value_t vtabsym, pagesym, returnsym, escsym,107,3183
+static value_t vtabsym, pagesym, returnsym, escsym, spacesym,107,3183
+static value_t vtabsym, pagesym, returnsym, escsym, spacesym, deletesym;107,3183
+static fl_readstate_t *readstate readstate113,3371
+static void free_readstate(115,3413
+static unsigned char *fromspace;fromspace121,3528
+static unsigned char *tospace;tospace122,3561
+static unsigned char *curheap;curheap123,3592
+static unsigned char *lim;lim124,3623
+static uint32_t heapsize;125,3650
+static uint32_t *consflags;consflags126,3683
+fl_exception_context_t *fl_ctx fl_ctx131,3839
+uint32_t fl_throwing_frame=132,3878
+value_t fl_lasterror;133,3951
+#define FL_TRY 135,3974
+#define FL_CATCH 142,4289
+void fl_savestate(147,4433
+void fl_restorestate(156,4616
+void fl_raise(164,4775
+static value_t make_error_msg(181,5232
+void lerrorf(188,5407
+void lerror(200,5628
+void type_error(208,5775
+void bounds_error(213,5914
+#define isstring 220,6122
+#define SAFECAST_OP(221,6151
+SAFECAST_OP(228,6633
+#undef isstring233,6814
+static symbol_t *mk_symbol(mk_symbol244,7058
+static symbol_t **symtab_lookup(symtab_lookup267,7664
+value_t symbol(283,7988
+static uint32_t _gensym_ctr=293,8176
+static char gsname[gsname296,8327
+static int gsnameno=297,8354
+value_t fl_gensym(298,8377
+int fl_isgensym(310,8685
+static value_t fl_gensymp(315,8741
+char *symbol_name(symbol_name321,8883
+static value_t mk_cons(337,9284
+static value_t *alloc_words(alloc_words348,9473
+#define cons_reserve(366,9907
+#define cons_index(368,9969
+#define ismarked(369,10033
+#define mark_cons(370,10096
+#define unmark_cons(371,10162
+static value_t the_empty_vector;373,10229
+value_t alloc_vector(375,10263
+void fl_gc_handle(403,10973
+void fl_free_gc_handles(410,11127
+static value_t relocate(416,11212
+value_t relocate_lispvalue(508,14033
+static void trace_globals(513,14100
+static value_t memory_exception_value;523,14334
+void gc(525,14374
+static void grow_stack(608,16826
+static value_t _applyn(621,17188
+value_t fl_apply(644,17707
+value_t fl_applyn(662,18001
+value_t fl_listn(681,18330
+value_t fl_list2(708,18843
+value_t fl_cons(722,19110
+int fl_isnumber(732,19262
+#define list(752,19725
+static value_t _list(754,19761
+static value_t copy_list(773,20140
+static value_t do_trycatch(800,20699
+static uint32_t process_keys(825,21160
+#define GET_INT32(894,23319
+#define GET_INT16(900,23598
+#define PUT_INT32(904,23776
+#define GET_INT32(906,23847
+#define GET_INT16(907,23883
+#define PUT_INT32(908,23919
+#define SWAP_INT32(910,23981
+#define SWAP_INT16(911,24047
+#define OP(914,24139
+#define NEXT_OP 915,24160
+#define OP(917,24205
+#define NEXT_OP 918,24227
+static value_t apply_cl(934,24553
+static uint32_t compute_maxstack(1805,52199
+static value_t _stacktrace(1979,57067
+void assign_global_builtins(2005,57778
+static value_t fl_function(2013,57937
+static value_t fl_function_code(2066,59503
+static value_t fl_function_vals(2073,59727
+static value_t fl_function_env(2080,59950
+static value_t fl_function_name(2087,60169
+value_t fl_copylist(2095,60393
+value_t fl_append(2101,60518
+value_t fl_liststar(2132,61271
+value_t fl_stacktrace(2139,61452
+value_t fl_map1(2146,61641
+static builtinspec_t core_builtin_info[core_builtin_info2215,63633
+static void lisp_init(2237,64294
+value_t fl_toplevel_eval(2336,68196
+void fl_init(2341,68294
+int fl_load_system_image(2349,68408
+
+flisp.h,6212
+#define FLISP_H2,16
+typedef uptrint_t value_t;7,74
+typedef int_t fixnum_t;8,101
+#define T_FIXNUM 10,139
+#define T_FIXNUM 12,170
+    value_t car;16,220
+    value_t cdr;17,237
+} cons_t;18,254
+typedef struct _symbol_t 20,265
+    uptrint_t flags;21,292
+    value_t binding;22,313
+    struct _fltype_t *type;type23,360
+    uint32_t hash;24,388
+    void *dlcache;dlcache25,407
+    struct _symbol_t *left;left27,479
+    struct _symbol_t *right;right28,507
+        char name[name30,548
+        void *_pad;_pad31,570
+} symbol_t;33,640
+    value_t isconst;36,670
+    value_t binding;37,691
+    struct _fltype_t *type;type38,738
+    uint32_t id;39,766
+} gensym_t;40,783
+#define TAG_NUM 42,796
+#define TAG_CPRIM 43,821
+#define TAG_FUNCTION 44,846
+#define TAG_VECTOR 45,871
+#define TAG_NUM1 46,896
+#define TAG_CVALUE 47,921
+#define TAG_SYM 48,946
+#define TAG_CONS 49,971
+#define UNBOUND 50,996
+#define TAG_FWD 51,1052
+#define tag(52,1081
+#define ptr(53,1106
+#define tagptr(54,1152
+#define fixnum(55,1195
+#define numval(56,1245
+#define fits_fixnum(58,1299
+#define fits_fixnum(60,1366
+#define fits_bits(62,1434
+#define uintval(63,1501
+#define builtin(64,1546
+#define iscons(65,1601
+#define issymbol(66,1643
+#define isfixnum(67,1684
+#define bothfixnums(68,1726
+#define isbuiltin(69,1778
+#define isvector(70,1851
+#define iscvalue(71,1894
+#define iscprim(72,1937
+#define selfevaluating(73,1979
+#define eq_comparable(75,2038
+#define eq_comparablep(76,2082
+#define leafp(78,2151
+#define isforwarded(80,2184
+#define forwardloc(81,2242
+#define forward(82,2289
+#define vector_size(85,2423
+#define vector_setsize(86,2472
+#define vector_elt(87,2534
+#define vector_grow_amt(88,2586
+#define car_(90,2691
+#define cdr_(91,2732
+#define car(92,2773
+#define cdr(93,2814
+#define fn_bcode(94,2855
+#define fn_vals(95,2899
+#define fn_env(96,2942
+#define fn_name(97,2984
+#define set(99,3028
+#define setc(100,3084
+#define isconstant(102,3215
+#define iskeyword(103,3254
+#define symbol_value(104,3292
+#define ismanaged(105,3347
+#define isgensym(107,3485
+#define isfunction(109,3537
+#define isclosure(110,3609
+#define iscbuiltin(111,3644
+#define FOR_ARGS(121,3986
+#define N_BUILTINS 124,4090
+#define FL_UNSPECIFIED 128,4171
+typedef struct _fl_readstate_t 161,5277
+    htable_t backrefs;162,5310
+    htable_t gensyms;163,5333
+    value_t source;164,5355
+    struct _fl_readstate_t *prev;prev165,5375
+} fl_readstate_t;166,5409
+typedef struct _ectx_t 168,5428
+    jmp_buf buf;169,5453
+    uint32_t sp;170,5470
+    uint32_t frame;171,5487
+    uint32_t ngchnd;172,5507
+    fl_readstate_t *rdst;rdst173,5528
+    struct _ectx_t *prev;prev174,5554
+} fl_exception_context_t;175,5580
+#define FL_TRY_EXTERN 181,5711
+#define FL_CATCH_EXTERN 187,6071
+void lerrorf(191,6164
+void lerror(192,6239
+void fl_raise(195,6412
+void type_error(196,6469
+void bounds_error(197,6559
+static inline void argcount(200,6752
+    void (*print)print207,6956
+    void (*relocate)relocate208,6999
+    void (*finalize)finalize209,7049
+    void (*print_traverse)print_traverse210,7085
+} cvtable_t;211,7127
+typedef enum { T_INT8,214,7209
+typedef enum { T_INT8, T_UINT8,214,7209
+typedef enum { T_INT8, T_UINT8, T_INT16,214,7209
+typedef enum { T_INT8, T_UINT8, T_INT16, T_UINT16,214,7209
+typedef enum { T_INT8, T_UINT8, T_INT16, T_UINT16, T_INT32,214,7209
+typedef enum { T_INT8, T_UINT8, T_INT16, T_UINT16, T_INT32, T_UINT32,214,7209
+               T_INT64,215,7279
+               T_INT64, T_UINT64,215,7279
+               T_INT64, T_UINT64, T_FLOAT,215,7279
+               T_INT64, T_UINT64, T_FLOAT, T_DOUBLE 215,7279
+               T_INT64, T_UINT64, T_FLOAT, T_DOUBLE } numerictype_t;215,7279
+#define N_NUMTYPES 217,7349
+# define T_LONG 220,7401
+# define T_ULONG 221,7425
+# define T_LONG 223,7457
+# define T_ULONG 224,7481
+typedef int (*cvinitfunc_t)cvinitfunc_t233,7704
+typedef struct _fltype_t 235,7769
+    value_t type;236,7796
+    numerictype_t numtype;237,7814
+    size_t size;238,7841
+    size_t elsz;239,7858
+    cvtable_t *vtable;vtable240,7875
+    struct _fltype_t *eltype;eltype241,7898
+    struct _fltype_t *artype;artype242,7943
+    int marked;243,7990
+    cvinitfunc_t init;244,8006
+} fltype_t;245,8029
+    fltype_t *type;type248,8059
+    void *data;data249,8079
+    size_t len;250,8095
+        value_t parent;252,8162
+        char _space[_space253,8201
+} cvalue_t;255,8252
+#define CVALUE_NWORDS 257,8265
+    fltype_t *type;type260,8307
+    char _space[_space261,8327
+} cprim_t;262,8347
+    value_t bcode;265,8376
+    value_t vals;266,8395
+    value_t env;267,8413
+    value_t name;268,8430
+} function_t;269,8448
+#define CPRIM_NWORDS 271,8463
+#define MAX_INL_SIZE 272,8486
+#define CV_OWNED_BIT 274,8512
+#define CV_PARENT_BIT 275,8538
+#define owned(276,8564
+#define hasparent(277,8626
+#define isinlined(278,8689
+#define cv_class(279,8745
+#define cv_len(280,8810
+#define cv_type(281,8845
+#define cv_data(282,8889
+#define cv_isstr(283,8925
+#define cv_isPOD(284,8983
+#define cvalue_data(286,9036
+#define cvalue_len(287,9086
+#define value2c(288,9134
+#define valid_numtype(290,9195
+#define cp_class(291,9239
+#define cp_type(292,9275
+#define cp_numtype(293,9319
+#define cp_data(294,9366
+#define cptr(297,9442
+typedef int8_t   fl_int8_t;301,9590
+typedef uint8_t  fl_uint8_t;302,9618
+typedef int16_t  fl_int16_t;303,9647
+typedef uint16_t fl_uint16_t;304,9676
+typedef int32_t  fl_int32_t;305,9706
+typedef uint32_t fl_uint32_t;306,9735
+typedef int64_t  fl_int64_t;307,9765
+typedef uint64_t fl_uint64_t;308,9794
+typedef char     fl_char_t;309,9824
+typedef char     char_t;310,9852
+typedef long     fl_long_t;311,9877
+typedef long     long_t;312,9905
+typedef unsigned long fl_ulong_t;313,9930
+typedef unsigned long ulong_t;314,9964
+typedef double   fl_double_t;315,9995
+typedef float    fl_float_t;316,10025
+typedef value_t (*builtin_t)builtin_t318,10055
+#define conv_to_long 378,12466
+#define conv_to_ulong 379,12501
+#define conv_to_long 381,12544
+#define conv_to_ulong 382,12579
+    char *name;name386,12641
+    builtin_t fptr;387,12657
+} builtinspec_t;388,12677
+
+flmain.c,48
+static value_t argv_list(7,97
+int main(23,460
+
+iostream.c,1577
+static value_t iostreamsym,11,179
+static value_t iostreamsym, rdsym,11,179
+static value_t iostreamsym, rdsym, wrsym,11,179
+static value_t iostreamsym, rdsym, wrsym, apsym,11,179
+static value_t iostreamsym, rdsym, wrsym, apsym, crsym,11,179
+static value_t iostreamsym, rdsym, wrsym, apsym, crsym, truncsym;11,179
+static value_t instrsym,12,245
+static value_t instrsym, outstrsym;12,245
+fltype_t *iostreamtype;iostreamtype13,281
+void print_iostream(15,306
+void free_iostream(21,402
+void relocate_iostream(27,496
+cvtable_t iostream_vtable 36,717
+int fl_isiostream(39,836
+value_t fl_iostreamp(44,941
+value_t fl_eof_object(50,1084
+value_t fl_eof_objectp(57,1215
+static ios_t *toiostream(toiostream63,1359
+ios_t *fl_toiostream(fl_toiostream70,1513
+value_t fl_file(75,1596
+value_t fl_buffer(97,2382
+value_t fl_read(108,2686
+value_t fl_iogetc(129,3131
+value_t fl_iopeekc(140,3432
+value_t fl_ioputc(150,3678
+value_t fl_ioungetc(160,4040
+value_t fl_ioflush(173,4507
+value_t fl_ioclose(182,4712
+value_t fl_iopurge(190,4887
+value_t fl_ioeof(198,5078
+value_t fl_ioseek(205,5253
+value_t fl_iopos(216,5534
+value_t fl_write(226,5771
+value_t fl_ioread(239,6083
+static void get_start_count_args(269,6992
+value_t fl_iowrite(283,7417
+value_t fl_dump(306,8196
+static char get_delim_arg(323,8648
+value_t fl_ioreaduntil(335,9042
+value_t fl_iocopyuntil(361,9753
+value_t fl_iocopy(370,10074
+value_t stream_to_string(383,10471
+value_t fl_iotostring(405,10991
+static builtinspec_t iostreamfunc_info[iostreamfunc_info414,11276
+void iostream_init(443,12122
+
+opaque_type_template.c,373
+static value_t TYPEsym;12,231
+static fltype_t *TYPEtype;TYPEtype13,255
+void print_TYPE(15,283
+void print_traverse_TYPE(19,336
+void free_TYPE(23,380
+void relocate_TYPE(27,414
+cvtable_t TYPE_vtable 31,466
+int isTYPE(34,580
+value_t fl_TYPEp(39,674
+static TYPE_t *toTYPE(toTYPE45,802
+static builtinspec_t TYPEfunc_info[TYPEfunc_info52,959
+void TYPE_init(57,1050
+
+opcodes.h,4289
+#define OPCODES_H2,18
+    OP_NOP=5,44
+    OP_NOP=0, OP_DUP,5,44
+    OP_NOP=0, OP_DUP, OP_POP,5,44
+    OP_NOP=0, OP_DUP, OP_POP, OP_CALL,5,44
+    OP_NOP=0, OP_DUP, OP_POP, OP_CALL, OP_TCALL,5,44
+    OP_NOP=0, OP_DUP, OP_POP, OP_CALL, OP_TCALL, OP_JMP,5,44
+    OP_NOP=0, OP_DUP, OP_POP, OP_CALL, OP_TCALL, OP_JMP, OP_BRF,5,44
+    OP_NOP=0, OP_DUP, OP_POP, OP_CALL, OP_TCALL, OP_JMP, OP_BRF, OP_BRT,5,44
+    OP_JMPL,6,117
+    OP_JMPL, OP_BRFL,6,117
+    OP_JMPL, OP_BRFL, OP_BRTL,6,117
+    OP_JMPL, OP_BRFL, OP_BRTL, OP_RET,6,117
+    OP_EQ,8,157
+    OP_EQ, OP_EQV,8,157
+    OP_EQ, OP_EQV, OP_EQUAL,8,157
+    OP_EQ, OP_EQV, OP_EQUAL, OP_ATOMP,8,157
+    OP_EQ, OP_EQV, OP_EQUAL, OP_ATOMP, OP_NOT,8,157
+    OP_EQ, OP_EQV, OP_EQUAL, OP_ATOMP, OP_NOT, OP_NULLP,8,157
+    OP_EQ, OP_EQV, OP_EQUAL, OP_ATOMP, OP_NOT, OP_NULLP, OP_BOOLEANP,8,157
+    OP_SYMBOLP,9,227
+    OP_SYMBOLP, OP_NUMBERP,9,227
+    OP_SYMBOLP, OP_NUMBERP, OP_BOUNDP,9,227
+    OP_SYMBOLP, OP_NUMBERP, OP_BOUNDP, OP_PAIRP,9,227
+    OP_SYMBOLP, OP_NUMBERP, OP_BOUNDP, OP_PAIRP, OP_BUILTINP,9,227
+    OP_SYMBOLP, OP_NUMBERP, OP_BOUNDP, OP_PAIRP, OP_BUILTINP, OP_VECTORP,9,227
+    OP_FIXNUMP,10,301
+    OP_FIXNUMP, OP_FUNCTIONP,10,301
+    OP_CONS,12,332
+    OP_CONS, OP_LIST,12,332
+    OP_CONS, OP_LIST, OP_CAR,12,332
+    OP_CONS, OP_LIST, OP_CAR, OP_CDR,12,332
+    OP_CONS, OP_LIST, OP_CAR, OP_CDR, OP_SETCAR,12,332
+    OP_CONS, OP_LIST, OP_CAR, OP_CDR, OP_SETCAR, OP_SETCDR,12,332
+    OP_APPLY,13,392
+    OP_ADD,15,407
+    OP_ADD, OP_SUB,15,407
+    OP_ADD, OP_SUB, OP_MUL,15,407
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV,15,407
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_IDIV,15,407
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_IDIV, OP_NUMEQ,15,407
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_IDIV, OP_NUMEQ, OP_LT,15,407
+    OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_IDIV, OP_NUMEQ, OP_LT, OP_COMPARE,15,407
+    OP_VECTOR,17,482
+    OP_VECTOR, OP_AREF,17,482
+    OP_VECTOR, OP_AREF, OP_ASET,17,482
+    OP_LOADT,19,516
+    OP_LOADT, OP_LOADF,19,516
+    OP_LOADT, OP_LOADF, OP_LOADNIL,19,516
+    OP_LOADT, OP_LOADF, OP_LOADNIL, OP_LOAD0,19,516
+    OP_LOADT, OP_LOADF, OP_LOADNIL, OP_LOAD0, OP_LOAD1,19,516
+    OP_LOADT, OP_LOADF, OP_LOADNIL, OP_LOAD0, OP_LOAD1, OP_LOADI8,19,516
+    OP_LOADV,20,583
+    OP_LOADV, OP_LOADVL,20,583
+    OP_LOADG,21,608
+    OP_LOADG, OP_LOADGL,21,608
+    OP_LOADA,22,633
+    OP_LOADA, OP_LOADAL,22,633
+    OP_LOADA, OP_LOADAL, OP_LOADC,22,633
+    OP_LOADA, OP_LOADAL, OP_LOADC, OP_LOADCL,22,633
+    OP_SETG,23,679
+    OP_SETG, OP_SETGL,23,679
+    OP_SETA,24,702
+    OP_SETA, OP_SETAL,24,702
+    OP_SETA, OP_SETAL, OP_SETC,24,702
+    OP_SETA, OP_SETAL, OP_SETC, OP_SETCL,24,702
+    OP_CLOSURE,26,745
+    OP_CLOSURE, OP_ARGC,26,745
+    OP_CLOSURE, OP_ARGC, OP_VARGC,26,745
+    OP_CLOSURE, OP_ARGC, OP_VARGC, OP_TRYCATCH,26,745
+    OP_CLOSURE, OP_ARGC, OP_VARGC, OP_TRYCATCH, OP_FOR,26,745
+    OP_TAPPLY,27,801
+    OP_TAPPLY, OP_ADD2,27,801
+    OP_TAPPLY, OP_ADD2, OP_SUB2,27,801
+    OP_TAPPLY, OP_ADD2, OP_SUB2, OP_NEG,27,801
+    OP_TAPPLY, OP_ADD2, OP_SUB2, OP_NEG, OP_LARGC,27,801
+    OP_TAPPLY, OP_ADD2, OP_SUB2, OP_NEG, OP_LARGC, OP_LVARGC,27,801
+    OP_LOADA0,28,863
+    OP_LOADA0, OP_LOADA1,28,863
+    OP_LOADA0, OP_LOADA1, OP_LOADC00,28,863
+    OP_LOADA0, OP_LOADA1, OP_LOADC00, OP_LOADC01,28,863
+    OP_LOADA0, OP_LOADA1, OP_LOADC00, OP_LOADC01, OP_CALLL,28,863
+    OP_LOADA0, OP_LOADA1, OP_LOADC00, OP_LOADC01, OP_CALLL, OP_TCALLL,28,863
+    OP_BRNE,29,934
+    OP_BRNE, OP_BRNEL,29,934
+    OP_BRNE, OP_BRNEL, OP_CADR,29,934
+    OP_BRNE, OP_BRNEL, OP_CADR, OP_BRNN,29,934
+    OP_BRNE, OP_BRNEL, OP_CADR, OP_BRNN, OP_BRNNL,29,934
+    OP_BRNE, OP_BRNEL, OP_CADR, OP_BRNN, OP_BRNNL, OP_BRN,29,934
+    OP_BRNE, OP_BRNEL, OP_CADR, OP_BRNN, OP_BRNNL, OP_BRN, OP_BRNL,29,934
+    OP_OPTARGS,30,1002
+    OP_OPTARGS, OP_BRBOUND,30,1002
+    OP_OPTARGS, OP_BRBOUND, OP_KEYARGS,30,1002
+    OP_BOOL_CONST_T,32,1043
+    OP_BOOL_CONST_T, OP_BOOL_CONST_F,32,1043
+    OP_BOOL_CONST_T, OP_BOOL_CONST_F, OP_THE_EMPTY_LIST,32,1043
+    OP_BOOL_CONST_T, OP_BOOL_CONST_F, OP_THE_EMPTY_LIST, OP_EOF_OBJECT,32,1043
+    N_OPCODES34,1116
+#define VM_LABELS 38,1159
+#define VM_APPLY_LABELS 76,3838
+#define VM_LABELS97,5266
+#define VM_APPLY_LABELS98,5284
+
+operators.c,413
+STATIC_INLINE double fpart(9,133
+numerictype_t effective_numerictype(16,276
+numerictype_t effective_numerictype(45,958
+double conv_to_double(63,1286
+void conv_from_double(85,2029
+#define CONV_TO_INTTYPE(105,2730
+CONV_TO_INTTYPE(124,3787
+int cmp_same_lt(159,4918
+int cmp_same_eq(176,5563
+int cmp_lt(193,6218
+int cmp_eq(247,7760
+    union { double d;250,7857
+    union { double d; int64_t i64;250,7857
+
+print.c,1184
+static htable_t printconses;5,77
+static u_int32_t printlabel;6,106
+static int print_pretty;7,135
+static int print_princ;8,160
+static fixnum_t print_length;9,184
+static fixnum_t print_level;10,214
+static fixnum_t P_LEVEL;11,243
+static int SCR_WIDTH 12,268
+static int HPOS=14,296
+static void outc(15,321
+static void outs(23,442
+static void outsn(28,530
+static int outindent(33,633
+void fl_print_chr(53,983
+void fl_print_str(58,1040
+void print_traverse(63,1098
+static void print_symbol_name(114,2513
+#define SMALL_STR_LEN 166,3884
+static inline int tinyp(167,3909
+static int smallp(177,4220
+static int specialindent(197,4808
+static int lengthestimate(206,5072
+static int allsmallp(214,5256
+static int indentafter3(228,5480
+static int indentafter2(234,5641
+static int indentevery(241,5838
+static int blockindent(253,6133
+static void print_pair(262,6347
+static int print_circle_prefix(358,9263
+void fl_print_child(374,9671
+static void print_string(489,13194
+int double_exponent(523,14076
+void snprint_real(531,14206
+static void cvalue_printdata(616,16727
+static void cvalue_print(797,22824
+static void set_print_width(832,23855
+void fl_print(839,23999
+
+read.c,1568
+    TOK_NONE,2,7
+    TOK_NONE, TOK_OPEN,2,7
+    TOK_NONE, TOK_OPEN, TOK_CLOSE,2,7
+    TOK_NONE, TOK_OPEN, TOK_CLOSE, TOK_DOT,2,7
+    TOK_NONE, TOK_OPEN, TOK_CLOSE, TOK_DOT, TOK_QUOTE,2,7
+    TOK_NONE, TOK_OPEN, TOK_CLOSE, TOK_DOT, TOK_QUOTE, TOK_SYM,2,7
+    TOK_NONE, TOK_OPEN, TOK_CLOSE, TOK_DOT, TOK_QUOTE, TOK_SYM, TOK_NUM,2,7
+    TOK_BQ,3,80
+    TOK_BQ, TOK_COMMA,3,80
+    TOK_BQ, TOK_COMMA, TOK_COMMAAT,3,80
+    TOK_BQ, TOK_COMMA, TOK_COMMAAT, TOK_COMMADOT,3,80
+    TOK_SHARPDOT,4,130
+    TOK_SHARPDOT, TOK_LABEL,4,130
+    TOK_SHARPDOT, TOK_LABEL, TOK_BACKREF,4,130
+    TOK_SHARPDOT, TOK_LABEL, TOK_BACKREF, TOK_SHARPQUOTE,4,130
+    TOK_SHARPDOT, TOK_LABEL, TOK_BACKREF, TOK_SHARPQUOTE, TOK_SHARPOPEN,4,130
+    TOK_OPENB,5,203
+    TOK_OPENB, TOK_CLOSEB,5,203
+    TOK_OPENB, TOK_CLOSEB, TOK_SHARPSYM,5,203
+    TOK_OPENB, TOK_CLOSEB, TOK_SHARPSYM, TOK_GENSYM,5,203
+    TOK_OPENB, TOK_CLOSEB, TOK_SHARPSYM, TOK_GENSYM, TOK_DOUBLEQUOTE5,203
+#define F 8,276
+static inline int symchar(14,574
+int isnumtok_base(20,700
+static int isnumtok(78,2330
+static int read_numtok(83,2421
+static u_int32_t toktype 93,2680
+static value_t tokval;94,2717
+static char buf[buf95,2740
+static char nextchar(97,2763
+static void take(126,3361
+static void accumchar(131,3413
+static int read_token(139,3614
+static u_int32_t peek(177,4458
+static value_t vector_grow(381,11215
+static value_t read_vector(401,11713
+static value_t read_string(428,12484
+static void read_list(510,15115
+static value_t do_read_sexpr(551,16302
+value_t fl_read_sexpr(667,20010
+
+string.c,779
+value_t fl_stringp(19,303
+value_t fl_string_count(25,441
+value_t fl_string_width(50,1261
+value_t fl_string_reverse(66,1716
+value_t fl_string_encode(77,2071
+value_t fl_string_decode(96,2764
+value_t fl_string(124,3618
+value_t fl_string_split(146,4244
+value_t fl_string_sub(189,5722
+value_t fl_string_char(214,6421
+value_t fl_char_upcase(228,6901
+value_t fl_char_downcase(236,7203
+static value_t mem_find_byte(245,7512
+value_t fl_string_find(253,7713
+value_t fl_string_inc(303,9227
+value_t fl_string_dec(321,9793
+static unsigned long get_radix_arg(342,10476
+value_t fl_numbertostring(350,10695
+value_t fl_stringtonumber(375,11494
+value_t fl_string_isutf8(389,11889
+static builtinspec_t stringfunc_info[stringfunc_info397,12137
+void stringfuncs_init(422,12924
+
+table.c,622
+static value_t tablesym;12,202
+static fltype_t *tabletype;tabletype13,227
+void print_htable(15,256
+void print_traverse_htable(33,752
+void free_htable(45,1068
+void relocate_htable(51,1184
+cvtable_t table_vtable 64,1604
+int ishashtable(67,1728
+value_t fl_tablep(72,1828
+static htable_t *totable(totable78,1963
+value_t fl_table(85,2131
+value_t fl_table_put(114,2937
+static void key_error(129,3407
+value_t fl_table_get(135,3555
+value_t fl_table_has(150,3933
+value_t fl_table_del(158,4143
+value_t fl_table_foldl(167,4378
+static builtinspec_t tablefunc_info[tablefunc_info194,5210
+void table_init(205,5489
+
+types.c,173
+fltype_t *get_type(get_type3,24
+fltype_t *get_array_type(get_array_type62,1487
+fltype_t *define_opaque_type(define_opaque_type70,1674
+void relocate_typetable(86,2065
+
+llt/bitvector.c,252
+u_int32_t *bitvector_resize(bitvector_resize43,958
+u_int32_t *bitvector_new(bitvector_new57,1374
+size_t bitvector_nwords(62,1482
+void bitvector_set(67,1556
+u_int32_t bitvector_get(75,1705
+static int ntz(80,1795
+uint32_t bitvector_next(96,2245
+
+llt/bitvector.h,163
+#define __BITVECTOR_H_2,23
+#define lomask(5,82
+#define himask(6,137
+#define ONES32 7,171
+#define count_bits(10,235
+static inline u_int32_t count_bits(12,276
+
+llt/bitvector-ops.c,713
+#define alloca 10,138
+#define MALLOC_CUTOFF 14,233
+u_int32_t bitreverse(16,261
+void bitvector_shr(38,863
+void bitvector_shr_to(59,1445
+void bitvector_shl(80,1867
+void bitvector_shl_to(101,2375
+void bitvector_fill(127,2935
+void bitvector_not(159,3590
+#define BITVECTOR_COPY_OP(192,4256
+#define BV_COPY(283,11290
+#define BV_NOT(284,11313
+BITVECTOR_COPY_OP(285,11338
+void bitvector_reverse(321,12277
+u_int64_t bitvector_count(343,12834
+u_int32_t bitvector_any0(378,13634
+u_int32_t bitvector_any1(411,14297
+static void adjust_offset_to(444,14941
+#define BITVECTOR_BINARY_OP_TO(453,15236
+#define BV_AND(480,17214
+#define BV_OR(481,17244
+#define BV_XOR(482,17274
+BITVECTOR_BINARY_OP_TO(483,17304
+
+llt/dirpath.c,372
+#undef NO_ERROR17,280
+#undef MOD_SHIFT18,296
+#undef TRUE19,313
+#undef FALSE20,325
+#undef VOID21,338
+void get_cwd(30,450
+int set_cwd(39,578
+void path_to_dirname(52,796
+char *get_exename(get_exename64,978
+char *get_exename(get_exename93,1656
+char *get_exename(get_exename102,1865
+char *get_exename(get_exename114,2090
+char *get_exename(get_exename123,2298
+
+llt/dirpath.h,330
+#define __DIRPATH_H_2,21
+#define PATHSEP 5,56
+#define PATHSEPSTRING 6,77
+#define PATHLISTSEP 7,104
+#define PATHLISTSEPSTRING 8,128
+#define ISPATHSEP(9,158
+#define MAXPATHLEN 10,203
+#define PATHSEP 12,233
+#define PATHSEPSTRING 13,253
+#define PATHLISTSEP 14,279
+#define PATHLISTSEPSTRING 15,303
+#define ISPATHSEP(16,333
+
+llt/dtypes.h,3229
+#define __DTYPES_H_2,20
+#  define LINUX21,572
+#  define MACOSX23,634
+#  define OPENBSD25,678
+#  define WIN3227,718
+#  define __SIZEOF_POINTER__ 34,821
+#  define __SIZEOF_POINTER__ 36,858
+#  define BITS6445,1052
+#  define BITS3247,1102
+#  define STDCALL 55,1197
+#    define DLLEXPORT 57,1255
+#    define DLLEXPORT 59,1307
+#  define STDCALL62,1366
+#  define DLLEXPORT 63,1384
+#  define LITTLE_ENDIAN 69,1517
+#  define BIG_ENDIAN 70,1558
+#  define PDP_ENDIAN 71,1596
+#  define BYTE_ORDER 72,1634
+#  define __LITTLE_ENDIAN 75,1744
+#  define __BIG_ENDIAN 76,1785
+#  define __PDP_ENDIAN 77,1823
+#  define __BYTE_ORDER 78,1861
+#  define __LITTLE_ENDIAN	80,1920
+#  define __BIG_ENDIAN	81,1951
+#  define __PDP_ENDIAN	82,1979
+#  define __BYTE_ORDER 83,2007
+#  define __FLOAT_WORD_ORDER 84,2052
+#  define LITTLE_ENDIAN 85,2097
+#  define BIG_ENDIAN 86,2138
+#  define PDP_ENDIAN 87,2176
+#  define BYTE_ORDER 88,2214
+#define LLT_ALLOC(97,2349
+#define LLT_REALLOC(98,2383
+#define LLT_FREE(99,2428
+#define LLT_ALLOC(102,2488
+#define LLT_REALLOC(103,2519
+#define LLT_FREE(104,2561
+typedef int bool_t;107,2597
+# define STATIC_INLINE 110,2666
+# define INLINE111,2696
+typedef unsigned long size_t;113,2727
+typedef unsigned int size_t;115,2764
+# define STATIC_INLINE 118,2807
+# define INLINE 119,2844
+typedef unsigned char  byte_t;122,2875
+typedef short int16_t;124,2940
+typedef int int32_t;125,2963
+typedef long long int64_t;126,2984
+typedef unsigned char u_int8_t;127,3011
+typedef unsigned short u_int16_t;128,3043
+typedef unsigned int u_int32_t;129,3077
+typedef unsigned long u_int64_t;131,3123
+typedef unsigned long long u_int64_t;133,3162
+typedef signed char int8_t;136,3231
+typedef short int16_t;137,3259
+typedef int int32_t;138,3282
+#define TOP_BIT 145,3361
+#define NBITS 146,3396
+typedef unsigned long uint_t;147,3413
+typedef long int_t;148,3478
+typedef int64_t offset_t;149,3498
+typedef u_int64_t index_t;150,3524
+typedef int64_t ptrint_t;151,3551
+typedef u_int64_t u_ptrint_t;152,3597
+#define TOP_BIT 154,3633
+#define NBITS 155,3660
+typedef unsigned long uint_t;156,3677
+typedef long int_t;157,3707
+typedef int32_t offset_t;158,3727
+typedef u_int32_t index_t;159,3753
+typedef int32_t ptrint_t;160,3780
+typedef u_int32_t u_ptrint_t;161,3806
+typedef u_int8_t  uint8_t;164,3844
+typedef u_int16_t uint16_t;165,3871
+typedef u_int32_t uint32_t;166,3899
+typedef u_int64_t uint64_t;167,3927
+typedef u_ptrint_t uptrint_t;168,3955
+#define LLT_ALIGN(170,3986
+#define __unlikely(174,4086
+#define __likely(175,4135
+#define __unlikely(177,4190
+#define __likely(178,4216
+#define DBL_MAXINT 181,4250
+#define FLT_MAXINT 182,4288
+#define U64_MAX 183,4316
+#define S64_MAX 184,4359
+#define S64_MIN 185,4400
+#define BIT63 186,4436
+#define U32_MAX 187,4476
+#define S32_MAX 188,4507
+#define S32_MIN 189,4538
+#define BIT31 190,4573
+#define DBL_EPSILON 192,4604
+#define FLT_EPSILON 193,4652
+#define DBL_MAX 194,4692
+#define DBL_MIN 195,4741
+#define FLT_MAX 196,4790
+#define FLT_MIN 197,4831
+#define LOG2_10 198,4872
+#define rel_zero(199,4916
+#define sign_bit(200,4969
+#define LABS(201,5017
+#define NBABS(202,5077
+#define DFINITE(203,5139
+#define DNAN(204,5223
+
+llt/dump.c,53
+static char hexdig[hexdig6,77
+void hexdump(12,223
+
+llt/hashing.c,170
+uint_t nextipow2(14,194
+u_int32_t int32hash(27,412
+u_int64_t int64hash(38,665
+u_int32_t int64to32hash(50,1029
+u_int64_t memhash(63,1378
+u_int32_t memhash32(71,1552
+
+llt/hashing.h,73
+#define __HASHING_H_2,21
+#define inthash 9,195
+#define inthash 11,227
+
+llt/htable.c,91
+htable_t *htable_new(htable_new15,221
+void htable_free(35,743
+void htable_reset(42,866
+
+llt/htable.h,180
+#define __HTABLE_H_2,20
+#define HT_N_INLINE 4,41
+    size_t size;7,82
+    void **table;table8,99
+    void *_space[_space9,117
+} htable_t;10,148
+#define HT_NOTFOUND 13,203
+
+llt/htableh.inc,72
+void 6,105
+void 7,171
+void 8,237
+int 9,303
+int 10,369
+void 11,435
+
+llt/htable.inc,117
+static 13,330
+void 81,5366
+void 88,5884
+static 95,6402
+void 120,8252
+int 128,8844
+int 133,9214
+void 143,9954
+
+llt/ieee754.h,1319
+#define __IEEE754_H_2,21
+union ieee754_float 4,43
+    float f;5,65
+	unsigned int negative:negative9,121
+	unsigned int exponent:exponent10,147
+	unsigned int mantissa:mantissa11,173
+	unsigned int mantissa:mantissa14,239
+	unsigned int exponent:exponent15,266
+	unsigned int negative:negative16,292
+    } ieee;18,325
+#define IEEE754_FLOAT_BIAS 21,341
+union ieee754_double 23,374
+    double d;24,397
+	unsigned int negative:negative28,454
+	unsigned int exponent:exponent29,480
+	unsigned int mantissa0:mantissa030,507
+	unsigned int mantissa1:mantissa131,535
+	unsigned int mantissa1:mantissa134,602
+	unsigned int mantissa0:mantissa035,630
+	unsigned int exponent:exponent36,658
+	unsigned int negative:negative37,685
+    } ieee;39,718
+#define IEEE754_DOUBLE_BIAS 42,734
+union ieee854_long_double 44,769
+    long double d;45,797
+	unsigned int negative:negative49,859
+	unsigned int exponent:exponent50,885
+	unsigned int empty:empty51,912
+	unsigned int mantissa0:mantissa052,936
+	unsigned int mantissa1:mantissa153,964
+	unsigned int mantissa1:mantissa156,1031
+	unsigned int mantissa0:mantissa057,1059
+	unsigned int exponent:exponent58,1087
+	unsigned int negative:negative59,1114
+	unsigned int empty:empty60,1140
+    } ieee;62,1171
+#define IEEE854_LONG_DOUBLE_BIAS 65,1187
+
+llt/int2str.c,55
+char *uint2str(uint2str5,60
+int isdigit_base(25,468
+
+llt/ios.c,1769
+#define fileno 16,261
+#define MOST_OF(30,483
+void *memrchr(memrchr35,575
+static void _fd_poll(50,915
+static int _enonfatal(66,1175
+#define SLEEP_TIME 72,1311
+static int _os_read(76,1447
+static int _os_read_all(95,1814
+static int _os_write(112,2118
+static int _os_write_all(131,2496
+static char *_buf_realloc(_buf_realloc151,2846
+static size_t _write_grow(190,3968
+static size_t _ios_read(227,4953
+size_t ios_read(289,6501
+size_t ios_readall(294,6591
+size_t ios_readprep(299,6684
+static void _write_update_pos(330,7566
+size_t ios_write(336,7709
+off_t ios_seek(393,9117
+off_t ios_seek_end(411,9482
+off_t ios_skip(427,9784
+off_t ios_pos(464,10738
+size_t ios_trunc(484,11157
+int ios_eof(504,11568
+int ios_flush(515,11742
+void ios_close(560,12956
+static void _buf_init(572,13219
+char *ios_takebuf(ios_takebuf586,13509
+int ios_setbuf(612,14005
+int ios_bufmode(634,14478
+void ios_set_readonly(643,14660
+static size_t ios_copy_(651,14790
+size_t ios_copy(679,15636
+size_t ios_copyall(684,15739
+#define LINE_CHUNK_SIZE 689,15825
+size_t ios_copyuntil(691,15854
+static void _ios_init(722,16867
+ios_t *ios_file(ios_file745,17316
+ios_t *ios_mem(ios_mem766,17873
+ios_t *ios_str(ios_str774,18003
+ios_t *ios_static_buffer(ios_static_buffer783,18178
+ios_t *ios_fd(ios_fd792,18347
+ios_t *ios_stdin ios_stdin804,18591
+ios_t *ios_stdout ios_stdout805,18616
+ios_t *ios_stderr ios_stderr806,18642
+void ios_init_stdstreams(808,18669
+int ios_putc(824,19054
+int ios_getc(838,19381
+int ios_peekc(853,19693
+int ios_ungetc(863,19940
+int ios_getutf8(884,20382
+int ios_peekutf8(911,20992
+int ios_pututf8(933,21428
+void ios_purge(942,21620
+char *ios_readline(ios_readline949,21713
+int ios_vprintf(960,21928
+int ios_printf(996,22810
+
+llt/ios.h,1089
+#define __IOS_H_2,17
+typedef enum { bm_none,9,218
+typedef enum { bm_none, bm_line,9,218
+typedef enum { bm_none, bm_line, bm_block,9,218
+typedef enum { bm_none, bm_line, bm_block, bm_mem 9,218
+typedef enum { bm_none, bm_line, bm_block, bm_mem } bufmode_t;9,218
+typedef enum { bst_none,11,282
+typedef enum { bst_none, bst_rd,11,282
+typedef enum { bst_none, bst_rd, bst_wr 11,282
+typedef enum { bst_none, bst_rd, bst_wr } bufstate_t;11,282
+#define IOS_INLSIZE 13,337
+#define IOS_BUFSIZE 14,360
+    bufmode_t bm;17,405
+    bufstate_t state;22,631
+    int errcode;24,654
+    char *buf;buf26,672
+    size_t maxsize;27,713
+    size_t size;28,764
+    size_t bpos;29,827
+    size_t ndirty;30,879
+    off_t fpos;32,948
+    size_t lineno;33,989
+    long fd;37,1127
+    unsigned char readonly:readonly39,1141
+    unsigned char ownbuf:ownbuf40,1171
+    unsigned char ownfd:ownfd41,1199
+    unsigned char _eof:_eof42,1226
+    unsigned char rereadable:rereadable46,1395
+    char local[local58,1797
+} ios_t;59,1826
+#define IOS_EOF 127,4361
+#define ios_puts(135,4610
+
+llt/llt.h,22
+#define __LLT_H_2,17
+
+llt/lltinit.c,225
+double D_PNAN;12,196
+double D_NNAN;13,211
+double D_PINF;14,226
+double D_NINF;15,241
+float  F_PNAN;16,256
+float  F_NNAN;17,271
+float  F_PINF;18,286
+float  F_NINF;19,301
+int locale_is_utf8;21,317
+void llt_init(23,338
+
+llt/lookup3.c,1081
+typedef unsigned int uint32_t;44,1990
+typedef unsigned char uint8_t;45,2021
+typedef unsigned short uint16_t;46,2052
+# define HASH_LITTLE_ENDIAN 60,2518
+# define HASH_BIG_ENDIAN 61,2548
+# define HASH_LITTLE_ENDIAN 65,2755
+# define HASH_BIG_ENDIAN 66,2785
+# define HASH_LITTLE_ENDIAN 68,2818
+# define HASH_BIG_ENDIAN 69,2848
+#define hashsize(72,2883
+#define hashmask(73,2922
+#define rot(74,2958
+#define mix(120,4983
+#define final(155,6222
+uint32_t hashword(179,7103
+void hashword2 222,8493
+uint32_t hashlittle(287,10791
+  union { const void *ptr;ptr290,10944
+  union { const void *ptr; size_t i;290,10944
+void hashlittle2(467,16933
+  union { const void *ptr;ptr474,17274
+  union { const void *ptr; size_t i;474,17274
+uint32_t hashbig(649,23117
+  union { const void *ptr;ptr652,23205
+  union { const void *ptr; size_t i;652,23205
+void driver1(775,27260
+#define HASHSTATE 793,27592
+#define HASHLEN 794,27612
+#define MAXPAIR 795,27632
+#define MAXLEN 796,27651
+void driver2(797,27670
+void driver3(867,29728
+ void driver4(958,33812
+int main(975,34116
+
+llt/mt19937ar.c,439
+#define mtN 47,2047
+#define mtM 48,2063
+#define MATRIX_A 49,2079
+#define UPPER_MASK 50,2134
+#define LOWER_MASK 51,2197
+static uint32_t mt[mt53,2260
+static int mti=54,2323
+void init_genrand(57,2434
+void init_by_array(76,3115
+uint32_t genrand_int32(102,3976
+long genrand_int31(141,5044
+double genrand_real1(147,5168
+double genrand_real2(154,5332
+double genrand_real3(161,5493
+double genrand_res53(168,5680
+int main(176,5905
+
+llt/ptrhash.c,92
+#define OP_EQ(15,223
+static u_int64_t _pinthash(18,268
+static u_int32_t _pinthash(30,644
+
+llt/ptrhash.h,26
+#define __PTRHASH_H_2,21
+
+llt/random.c,97
+double rand_double(15,208
+float rand_float(26,450
+double randn(36,648
+void randomize(58,1055
+
+llt/random.h,71
+#define __LLTRANDOM_H_2,23
+#define random(4,47
+#define srandom(5,80
+
+llt/socket.c,334
+int mysocket(19,259
+void set_nonblock(32,585
+void bzero(44,846
+int open_tcp_port(51,965
+int open_any_tcp_port(73,1577
+int open_any_udp_port(97,2246
+void closesocket(118,2781
+int connect_to_host(125,2897
+int connect_to_addr(157,3733
+int sendall(177,4221
+int readall(193,4625
+int addr_eq(208,4975
+int socket_ready(216,5158
+
+llt/socket.h,28
+#define __LLTSOCKET_H_2,23
+
+llt/timefuncs.c,228
+double floattime(33,585
+double tv2float(41,727
+double diff_time(46,827
+u_int64_t i64time(53,1011
+double clock_now(69,1329
+void timestring(81,1485
+double parsetime(111,2468
+void sleep_ms(131,2819
+void timeparts(147,3065
+
+llt/timefuncs.h,28
+#define __TIMEFUNCS_H_2,23
+
+llt/utf8.c,1058
+#define snprintf 26,768
+static const u_int32_t offsetsFromUTF8[offsetsFromUTF836,959
+static const char trailingBytesForUTF8[trailingBytesForUTF841,1100
+size_t u8_seqlen(53,1755
+size_t u8_charlen(60,1990
+size_t u8_codingsize(73,2212
+size_t u8_toucs(90,2651
+size_t u8_toutf8(132,3855
+size_t u8_wc_toutf8(172,4931
+size_t u8_offset(200,5589
+size_t u8_charnum(214,5851
+size_t u8_strlen(228,6154
+size_t u8_strwidth(249,6522
+u_int32_t u8_nextchar(283,7549
+u_int32_t u8_nextmemchar(299,7876
+void u8_inc(314,8133
+void u8_dec(319,8256
+int octal_digit(324,8379
+int hex_digit(329,8443
+char read_escape_control_char(336,8583
+size_t u8_read_escape_sequence(359,9112
+size_t u8_unescape(397,10148
+static inline int buf_put2c(424,10708
+int u8_escape_wchar(432,10844
+size_t u8_escape(465,11833
+char *u8_strchr(u8_strchr503,12834
+char *u8_memchr(u8_memchr521,13211
+char *u8_memrchr(u8_memrchr546,13708
+int u8_is_locale_utf8(571,14171
+size_t u8_vprintf(592,14792
+size_t u8_printf(616,15366
+int u8_isvalid(633,15741
+int u8_reverse(694,17401
+
+llt/utf8.h,346
+#define __UTF8_H_2,18
+typedef char int8_t;6,110
+typedef short int16_t;7,131
+typedef int int32_t;8,154
+typedef long long int64_t;9,175
+typedef unsigned char u_int8_t;10,202
+typedef unsigned short u_int16_t;11,234
+typedef unsigned int u_int32_t;12,268
+typedef unsigned long long u_int64_t;13,300
+#define isutf(24,505
+#define UEOF 26,542
+
+llt/utils.h,912
+#define __UTILS_H_2,19
+#  define ARCH_X86_646,88
+#  define __CPU__ 7,110
+#  define ARCH_X8612,272
+#  define __CPU__ 13,291
+#  define ARCH_X8615,360
+#  define __CPU__ 16,379
+#  define ARCH_X8618,434
+#  define __CPU__ 19,453
+#  define ARCH_X8621,508
+#  define __CPU__ 22,527
+#  define ARCH_X8624,582
+#  define __CPU__ 25,601
+#  define LEGACY_REGS 36,860
+#  define LEGACY_REGS 38,893
+STATIC_INLINE u_int16_t ByteSwap16(42,1006
+#define bswap_16(49,1142
+STATIC_INLINE u_int32_t ByteSwap32(51,1177
+#define bswap_32(66,1427
+STATIC_INLINE u_int64_t ByteSwap64(68,1462
+  register union { __extension__ u_int64_t __ll;76,1610
+          u_int32_t __l[__l77,1659
+#define bswap_64(84,1862
+#define bswap_16(88,1904
+#define bswap_32(91,1993
+#define bswap_32(93,2029
+STATIC_INLINE u_int64_t ByteSwap64(98,2188
+        u_int64_t ll;101,2251
+        u_int32_t l[l102,2273
+#define bswap_64(109,2407
+
+llt/wcwidth.c,205
+struct interval 67,3342
+  int first;68,3360
+  int last;69,3373
+static int bisearch(73,3450
+DLLEXPORT int wcwidth(128,5032
+int wcswidth(213,9436
+int wcwidth_cjk(236,10080
+int wcswidth_cjk(304,13833
+
+bootstrap.sh,0
